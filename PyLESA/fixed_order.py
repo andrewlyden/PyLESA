@@ -19,6 +19,8 @@ from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 import initialise_classes
 import inputs
 
+'quick commit'
+
 
 class FixedOrder(object):
 

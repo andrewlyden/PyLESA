@@ -12,9 +12,6 @@ from scipy.integrate import odeint
 
 import weather
 
-'trial'
-
-
 class HotWaterTank(object):
 
     def __init__(self, capacity, insulation, location, number_nodes,
