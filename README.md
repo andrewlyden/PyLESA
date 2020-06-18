@@ -6,4 +6,4 @@ PyLESA is an open source tool capable of modelling local energy systems containi
 
 This tool was developed as part of a PhD, "Modelling and Design of Local Energy Systems Incorporating Heat Pumps, Thermal Storage, Future  Tariffs, and Model Predictive Control " by Andrew Lyden.
 
-PyLESA was written and tested using Python 2.7, and will be soon be converted to be used with Python 3.x
+PyLESA is compatible with Python 3.7.6.
