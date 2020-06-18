@@ -5,14 +5,11 @@ import os
 import renewables
 import inputs
 
-name = 'west_whins_DHW.xlsx'
-subname = 'hp_14_ts_550'
+name = 'WWHC_FOC_WM.xlsx'
+subname = 'hp_1000_ts_400000'
 # name = 'WWHC.xlsx'
 # subname = 'hp_1000_ts_50000'
 myInputs = inputs.Inputs(name, subname)
-
-plt.style.use('ggplot')
-plt.rcParams.update({'font.size': 22})
 
 
 def wind_user_test():
@@ -29,11 +26,18 @@ def wind_user_test():
         power_curve=input_windturbine['power_curve'],
         weather_input=input_weather)
 
+    myWindturbine.multiplier = 1
+
     power = myWindturbine.user_power()
-    print power
+    plt.style.use('ggplot')
+    plt.rcParams.update({'font.size': 12})
+    plt.plot(power)
+    plt.ylabel('Output (kW)')
+    plt.xlabel('Hour of year')
+    plt.show()
 
 
-# wind_user_test()
+wind_user_test()
 
 
 def wind_database_test():
@@ -48,12 +52,18 @@ def wind_database_test():
         multiplier=input_windturbine['multiplier'],
         weather_input=input_weather)
 
-    myWindturbine.multiplier = 0
+    myWindturbine.multiplier = 1
     power = myWindturbine.database_power()
-    print power
+
+    plt.style.use('ggplot')
+    plt.rcParams.update({'font.size': 12})
+    plt.plot(power)
+    plt.ylabel('Output (kW)')
+    plt.xlabel('Hour of year')
+    plt.show()
 
 
-# wind_database_test()
+wind_database_test()
 
 
 def wind_farm_test():
@@ -70,10 +80,16 @@ def wind_farm_test():
         weather_input=input_weather)
 
     power = myWindfarm.wind_farm_power()
-    print power
+
+    plt.style.use('ggplot')
+    plt.rcParams.update({'font.size': 12})
+    plt.plot(power)
+    plt.ylabel('Output (kW)')
+    plt.xlabel('Hour of year')
+    plt.show()
 
 
-# wind_farm_test()
+wind_farm_test()
 
 
 def PV_test():
@@ -95,17 +111,19 @@ def PV_test():
         weather_input=input_weather)
 
     power = myPV.power_output()
-    print power
-    plt.plot(power[0:8760])
+
+    plt.style.use('ggplot')
+    plt.rcParams.update({'font.size': 12})
+    plt.plot(power)
     plt.ylabel('PV output (kW)')
     plt.xlabel('Hour of year')
     plt.show()
 
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data", 'PV_output.csv')
-    np.savetxt(file, power.values, delimiter=",", fmt='%.3e')
-    print power.max()
-    print power.sum()
+    # file = os.path.join(
+    #     os.path.dirname(__file__), "..", "data", 'PV_output.csv')
+    # np.savetxt(file, power.values, delimiter=",", fmt='%.3e')
+    print(power.max())
+    print(power.sum())
 
 
 PV_test()

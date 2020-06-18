@@ -6,6 +6,7 @@ only set up for hot water tank capacity and heat pump
 
 import os
 import pandas as pd
+import pickle
 import shutil
 
 
@@ -13,11 +14,14 @@ class Para(object):
 
     def __init__(self, name):
 
+        self.name = name
+
         # read in set of parameters from input
         file1 = os.path.join(
-            os.path.dirname(__file__), "..", "inputs",
-            name[:-5], "parametric_analysis.pkl")
-        pa = pd.read_pickle(file1)
+            os.path.dirname(__file__), "..", "inputs", name[:-5],
+            "inputs.pkl")
+        self.input = pd.read_pickle(file1)
+        pa = self.input['parametric_analysis']
 
         # list set of heat pump sizes
         hp_sizes = []
@@ -51,60 +55,45 @@ class Para(object):
                 'hp_' + str(combos[i][0]) + '_ts_' + str(combos[i][1]))
         self.folder_name = folder_name
 
-        # make folders for each set of parameters
+        # point to folder which will contain the parametric inputs
         folder = os.path.join(
             os.path.dirname(__file__), "..", "inputs",
             name[:-5])
         self.folder = folder
-        for i in range(len(folder_name)):
-            path = os.path.join(folder, folder_name[i])
-            if os.path.isdir(path) is False:
-                os.mkdir(path)
-            elif os.path.isdir(path) is True:
-                shutil.rmtree(path)
-                os.mkdir(path)
 
-            # make outputs folder for each set of parameters
-            path = os.path.join(
-                os.path.dirname(__file__), "..", "outputs",
+        # make output folders for each combination
+        for i in range(len(folder_name)):
+            folder = os.path.join(
+                os.path.dirname(__file__), '..', 'outputs',
                 name[:-5], folder_name[i])
-            if os.path.isdir(path) is False:
-                os.mkdir(path)
-            elif os.path.isdir(path) is True:
-                shutil.rmtree(path)
-                os.mkdir(path)
+            if os.path.isdir(folder) is False:
+                os.mkdir(folder)
+            elif os.path.isdir(folder) is True:
+                shutil.rmtree(folder)
+                os.mkdir(folder)
 
     def create_pickles(self):
 
-        # copy pickles to new folder
-        for i in range(len(self.folder_name)):
-            src = self.folder
-            dest = os.path.join(self.folder, self.folder_name[i])
-            src_files = os.listdir(src)
-            for file_name in src_files:
-                full_file_name = os.path.join(src, file_name)
-                if os.path.isfile(full_file_name):
-                    shutil.copy(full_file_name, dest)
-
         # create new set of pickles for each combo
         for i in range(len(self.folder_name)):
-            # read heat pump pickle for changing the basics capacity
+
+            # read in set of parameters from input
             file1 = os.path.join(
-                self.folder, "hp_basics.pkl")
-            hp_basics = pd.read_pickle(file1)
+                os.path.dirname(__file__), "..", "inputs", self.name[:-5],
+                "inputs.pkl")
+            self.input = pd.read_pickle(file1)
+
+            # read heat pump pickle for changing the basics capacity
+            hp_basics = self.input['hp_basics']
             # original capacity input
             capacity = hp_basics['capacity'][0]
             # modify
             hp_basics['capacity'][0] = self.combos[i][0]
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], "hp_basics.pkl")
-            hp_basics.to_pickle(file2)
+            self.input['hp_basics'] = hp_basics
 
             # read heat pump pickle for changing the st reg duties
-            file1 = os.path.join(
-                self.folder, 'regression1.pkl')
-            reg1 = pd.read_pickle(file1)
+            reg1 = self.input['regression1']
             # modify
             if capacity == 0:
                 ratio = 0
@@ -112,50 +101,38 @@ class Para(object):
                 ratio = round(float(self.combos[i][0]) / float(capacity), 2)
             reg1['duty'] = reg1['duty'] * ratio
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], 'regression1.pkl')
-            reg1.to_pickle(file2)
+            self.input['regression1'] = reg1
 
             # read heat pump pickle for changing the st reg duties
-            file1 = os.path.join(
-                self.folder, 'regression2.pkl')
-            reg1 = pd.read_pickle(file1)
+            reg2 = self.input['regression2']
             # modify
-            reg1['duty'] = reg1['duty'] * ratio
+            reg2['duty'] = reg2['duty'] * ratio
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], 'regression2.pkl')
-            reg1.to_pickle(file2)
+            self.input['regression2'] = reg2
 
             # read heat pump pickle for changing the st reg duties
-            file1 = os.path.join(
-                self.folder, 'regression3.pkl')
-            reg1 = pd.read_pickle(file1)
+            reg3 = self.input['regression3']
             # modify
-            reg1['duty'] = reg1['duty'] * ratio
+            reg3['duty'] = reg3['duty'] * ratio
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], 'regression3.pkl')
-            reg1.to_pickle(file2)
+            self.input['regression3'] = reg3
 
             # read heat pump pickle for changing the st reg duties
-            file1 = os.path.join(
-                self.folder, 'regression4.pkl')
-            reg1 = pd.read_pickle(file1)
+            reg4 = self.input['regression4']
             # modify
-            reg1['duty'] = reg1['duty'] * ratio
+            reg4['duty'] = reg4['duty'] * ratio
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], 'regression4.pkl')
-            reg1.to_pickle(file2)
+            self.input['regression4'] = reg4
 
             # read ts pickle
-            file1 = os.path.join(
-                self.folder, "thermal_storage.pkl")
-            ts = pd.read_pickle(file1)
+            ts = self.input['thermal_storage']
             # modify
             ts['capacity'][0] = self.combos[i][1]
             # save
-            file2 = os.path.join(
-                self.folder, self.folder_name[i], "thermal_storage.pkl")
-            ts.to_pickle(file2)
+            self.input['thermal_storage'] = ts
+
+            # save new pickle output
+            file = os.path.join(
+                self.folder, self.folder_name[i] + ".pkl")
+            with open(file, 'wb') as handle:
+                pickle.dump(self.input, handle, protocol=pickle.HIGHEST_PROTOCOL)

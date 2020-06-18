@@ -4,13 +4,13 @@ reads and then writes input pickle files
 """
 
 import os
-import cPickle as pickle
+import pickle
 import shutil
 import pandas as pd
 
 
 def run_all(excel_file_name):
-    print 'Reading excel...'
+    print('Reading excel...')
     myInput = Input(excel_file_name)
 
     myInput.parametric_analysis()
@@ -27,35 +27,44 @@ def run_all(excel_file_name):
     myInput.thermal_storage()
     myInput.heat_pump()
 
-    print 'Excel sheet read complete'
+    # write to pickle file
+    file = os.path.join(
+        os.path.dirname(__file__), "..", "inputs", myInput.name[:-5], 'inputs.pkl')
+    with open(file, 'wb') as handle:
+        pickle.dump(myInput.container, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print('Excel sheet read complete')
 
 
 class Input(object):
 
     def __init__(self, name):
 
+        # name of excel sheet
+        self.name = name
+
+        # data containter
+        self.container = {}
+
+        # path to folder for inputs
         self.folder_path = os.path.join(
             os.path.dirname(__file__), "..", "inputs", name[:-5])
-
-        file_path = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name)
-        self.excel_sheets = pd.read_excel(file_path, sheet_name=None)
-
-        # creates a folder for keeping all the
-        # pickle input files as saved from the excel file
         if os.path.isdir(self.folder_path) is False:
             os.mkdir(self.folder_path)
-
         elif os.path.isdir(self.folder_path) is True:
             shutil.rmtree(self.folder_path)
             os.mkdir(self.folder_path)
+
+        # read excel sheet
+        file_path = os.path.join(
+            os.path.dirname(__file__), "..", "inputs", name)
+        self.excel_sheets = pd.read_excel(file_path, sheet_name=None)
 
         # create outputs folder
         out_path = os.path.join(
             os.path.dirname(__file__), "..", "outputs", name[:-5])
         if os.path.isdir(out_path) is False:
             os.mkdir(out_path)
-
         elif os.path.isdir(out_path) is True:
             shutil.rmtree(out_path)
             os.mkdir(out_path)
@@ -82,9 +91,8 @@ class Input(object):
                 'ts_max': ts_max,
                 'ts_min': ts_min,
                 'ts_step': ts_step}
-        file = os.path.join(self.folder_path, "parametric_analysis.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(data, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+
+        self.container['parametric_analysis'] = data
 
     def controller(self):
 
@@ -96,22 +104,14 @@ class Input(object):
         controller_info = {'controller': controller,
                            'first_hour': first_hour,
                            'total_timesteps': total_timesteps}
-        file = os.path.join(self.folder_path, "controller_info.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                controller_info, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+
+        self.container['controller_info'] = controller_info
 
         import_setpoint = df['Unnamed: 3'][5]
-        file = os.path.join(self.folder_path, "import_setpoint.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                import_setpoint, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['import_setpoint'] = import_setpoint
 
         horizon = df['Unnamed: 6'][7]
-        file = os.path.join(self.folder_path, "horizon.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                horizon, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['horizon'] = horizon
 
         order_below_setpoint = df['Unnamed: 3'][7]
         ls = order_below_setpoint.split(',')
@@ -121,12 +121,7 @@ class Input(object):
         order_above_setpoint = [int(i) for i in ls]
         fixed_order_info = {'order_below_setpoint': order_below_setpoint,
                             'order_above_setpoint': order_above_setpoint}
-
-        file = os.path.join(self.folder_path, "fixed_order_info.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                fixed_order_info, output_file,
-                protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['fixed_order_info'] = fixed_order_info
 
     def resources(self):
 
@@ -146,18 +141,14 @@ class Input(object):
                                 'Unnamed: 12': 'water_temperature'})
         df = df.reset_index(drop=True)
 
-        file = os.path.join(self.folder_path, "resources.pkl")
-        df.to_pickle(file)
+        self.container['resources'] = df
 
     def demands(self):
 
         df = self.excel_sheets['Demand gen']
 
         hot_water = df['Unnamed: 3'][15]
-        file1 = os.path.join(self.folder_path, "hot_water.pkl")
-        with open(file1, 'wb') as output_file:
-            pickle.dump(
-                hot_water, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['hot_water'] = hot_water
 
         dem = df.drop(index=[0, 1, 2, 3],
                       columns=['Unnamed: 0', 'Unnamed: 1',
@@ -171,14 +162,12 @@ class Input(object):
                                   'Unnamed: 5': 'Bedrooms',
                                   'Unnamed: 6': 'Number of type'})
         dem = dem.reset_index(drop=True)
-
-        file2 = os.path.join(self.folder_path, "heating.pkl")
-        dem.to_pickle(file2)
+        self.container['heating'] = dem
 
     def demand_input(self):
 
         # df = self.excel_sheets
-        # print df
+        # print(df)
         # with open('temp.pkl', 'wb') as output_file:
         #     pickle.dump(df, output_file, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -189,9 +178,7 @@ class Input(object):
         data = {'temp_return': temp_return,
                 'source_delta_t': source_delta_t}
 
-        file1 = os.path.join(self.folder_path, "demand_input_static.pkl")
-        with open(file1, 'wb') as output_file:
-            pickle.dump(data, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['demand_input_static'] = data
 
         df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2',
                               'Unnamed: 7', 'Unnamed: 8'],
@@ -202,8 +189,7 @@ class Input(object):
                                 'Unnamed: 6': 'temp_source'})
         df = df.reset_index(drop=True)
 
-        file2 = os.path.join(self.folder_path, "demand_input_variable.pkl")
-        df.to_pickle(file2)
+        self.container['demand_input_variable'] = df
 
     def PV(self):
 
@@ -218,8 +204,7 @@ class Input(object):
                                                   'Unnamed: 4': 'longitude',
                                                   'Unnamed: 5': 'altitude'})
         PV_location = PV_location.reset_index(drop=True)
-        file1 = os.path.join(self.folder_path, "PV_location.pkl")
-        PV_location.to_pickle(file1)
+        self.container['PV_location'] = PV_location
 
         PV_spec = df.drop(columns=['Unnamed: 0', 'Unnamed: 1'],
                           index=[17])
@@ -231,8 +216,7 @@ class Input(object):
                                           'Unnamed: 6': 'surface_azimuth',
                                           'Unnamed: 7': 'surface_type'})
         PV_spec = PV_spec.reset_index(drop=True)
-        file2 = os.path.join(self.folder_path, "PV_spec.pkl")
-        PV_spec.to_pickle(file2)
+        self.container['PV_spec'] = PV_spec
 
     def wind(self):
 
@@ -248,8 +232,7 @@ class Input(object):
                      'Unnamed: 4': 'rotor_diameter',
                      'Unnamed: 5': 'multiplier'})
         wind_database = wind_database.reset_index(drop=True)
-        file1 = os.path.join(self.folder_path, "wind_database.pkl")
-        wind_database.to_pickle(file1)
+        self.container['wind_database'] = wind_database
 
         my_turbine = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
                                       'Unnamed: 7'],
@@ -262,9 +245,7 @@ class Input(object):
                      'Unnamed: 5': 'multiplier',
                      'Unnamed: 6': 'nominal_power'})
         my_turbine = my_turbine.reset_index(drop=True)
-
-        file2 = os.path.join(self.folder_path, "wind_user.pkl")
-        my_turbine.to_pickle(file2)
+        self.container['wind_user'] = my_turbine
 
         power_curve = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
                                        'Unnamed: 4', 'Unnamed: 5',
@@ -275,9 +256,7 @@ class Input(object):
             columns={'Unnamed: 2': 'value',
                      'Unnamed: 3': 'wind_speed'})
         power_curve = power_curve.reset_index(drop=True)
-
-        file3 = os.path.join(self.folder_path, "power_curve.pkl")
-        power_curve.to_pickle(file3)
+        self.container['power_curve'] = power_curve
 
     def wind_farm(self):
         df = self.excel_sheets['Wind farm']
@@ -293,14 +272,10 @@ class Input(object):
                      'rotor_diameter': rotor_diameter,
                      'number_of_turbines': number_of_turbines,
                      'efficiency': efficiency}
-
-        file1 = os.path.join(self.folder_path, "wind_farm.pkl")
-        with open(file1, 'wb') as output_file:
-            pickle.dump(
-                wind_farm, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['wind_farm'] = wind_farm
 
         df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
-                              'Unnamed: 7', 'Unnamed: 8'],
+                              'Unnamed: 7'],
                      index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                             11, 12, 13, 14, 15, 16, 17])
         df = df.rename(columns={'Unnamed: 2': 'wind_speed_10',
@@ -309,9 +284,7 @@ class Input(object):
                                 'Unnamed: 5': 'pressure',
                                 'Unnamed: 6': 'air_temperature'})
         df = df.reset_index(drop=True)
-
-        file = os.path.join(self.folder_path, "wind_farm_resources.pkl")
-        df.to_pickle(file)
+        self.container['wind_farm_resources'] = df
 
     def electrical_storage(self):
         # df = self.excel_sheets
@@ -331,9 +304,7 @@ class Input(object):
                      'Unnamed: 7': 'discharge eff',
                      'Unnamed: 8': 'self discharge'})
         df = df.reset_index(drop=True)
-
-        file = os.path.join(self.folder_path, "electrical_storage.pkl")
-        df.to_pickle(file)
+        self.container['electrical_storage'] = df
 
     def grid(self):
         # df = self.excel_sheets
@@ -342,29 +313,16 @@ class Input(object):
         df = self.excel_sheets['Grid']
 
         export = df['Unnamed: 3'][7]
-        file0 = os.path.join(self.folder_path, "export.pkl")
-        with open(file0, 'wb') as output_file:
-            pickle.dump(
-                export, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['export'] = export
 
         tariff_choice = df['Unnamed: 3'][3]
-        file0 = os.path.join(self.folder_path, "tariff_choice.pkl")
-        with open(file0, 'wb') as output_file:
-            pickle.dump(
-                tariff_choice, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['tariff_choice'] = tariff_choice
 
         balancing_mechanism = df['Unnamed: 7'][3]
-        file0 = os.path.join(self.folder_path, "balancing_mechanism.pkl")
-        with open(file0, 'wb') as output_file:
-            pickle.dump(
-                balancing_mechanism, output_file,
-                protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['balancing_mechanism'] = balancing_mechanism
 
         grid_services = df['Unnamed: 9'][3]
-        file0 = os.path.join(self.folder_path, "grid_services.pkl")
-        with open(file0, 'wb') as output_file:
-            pickle.dump(
-                grid_services, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['grid_services'] = grid_services
 
         df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
                               'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16',
@@ -388,18 +346,12 @@ class Input(object):
             index={10: 'notice_period',
                    11: 'payment',
                    12: 'frequency'})
-
-        file1 = os.path.join(self.folder_path, "grid_services_series.pkl")
-        grid_services_series.to_pickle(file1)
+        self.container['grid_services_series'] = grid_services_series
 
         flat_rate_import = df['Unnamed: 2'][7]
         flat_rate_export = df['Unnamed: 3'][7]
         flat_rates = {'import': flat_rate_import, 'export': flat_rate_export}
-
-        file2 = os.path.join(self.folder_path, "flat_rates.pkl")
-        with open(file2, 'wb') as output_file:
-            pickle.dump(
-                flat_rates, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['flat_rates'] = flat_rates
 
         variable_periods = df.iloc[16:40]
         variable_periods = variable_periods.drop(
@@ -414,17 +366,10 @@ class Input(object):
                      'Unnamed: 12': 'Saturday',
                      'Unnamed: 13': 'Sunday'})
         variable_periods = variable_periods.reset_index(drop=True)
-
-        file3 = os.path.join(self.folder_path, 'variable_periods.pkl')
-        variable_periods.to_pickle(file3)
+        self.container['variable_periods'] = variable_periods
 
         variable_periods_year = df['Unnamed: 13'][40]
-
-        file2 = os.path.join(self.folder_path, "variable_periods_year.pkl")
-        with open(file2, 'wb') as output_file:
-            pickle.dump(
-                variable_periods_year, output_file,
-                protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['variable_periods_year'] = variable_periods_year
 
         wholesale_market = df.iloc[10:8770]
         wholesale_market = wholesale_market.drop(
@@ -436,9 +381,7 @@ class Input(object):
         wholesale_market = wholesale_market.rename(columns={
             'Unnamed: 2': 'wholesale_market'})
         wholesale_market = wholesale_market.reset_index(drop=True)
-
-        file4 = os.path.join(self.folder_path, 'wholesale_market.pkl')
-        wholesale_market.to_pickle(file4)
+        self.container['wholesale_market'] = wholesale_market
 
         balancing_mechanism_series = df.iloc[10:8770]
         balancing_mechanism_series = balancing_mechanism_series.drop(
@@ -451,10 +394,7 @@ class Input(object):
             columns={'Unnamed: 3': 'balancing_mechanism'})
         balancing_mechanism_series = balancing_mechanism_series.reset_index(
             drop=True)
-
-        file5 = os.path.join(
-            self.folder_path, 'balancing_mechanism_series.pkl')
-        balancing_mechanism_series.to_pickle(file5)
+        self.container['balancing_mechanism_series'] = balancing_mechanism_series
 
         ppa_output = df.iloc[10:8770]
         ppa_output = ppa_output.drop(
@@ -466,9 +406,7 @@ class Input(object):
         ppa_output = ppa_output.rename(columns={
             'Unnamed: 4': 'ppa_output'})
         ppa_output = ppa_output.reset_index(drop=True)
-
-        file6 = os.path.join(self.folder_path, 'ppa_output.pkl')
-        ppa_output.to_pickle(file6)
+        self.container['ppa_output'] = ppa_output
 
         premium = df['Unnamed: 6'][7]
         maximum = df['Unnamed: 7'][7]
@@ -480,21 +418,13 @@ class Input(object):
 
         wm_info = {'premium': premium,
                    'maximum': maximum}
-
-        file7 = os.path.join(self.folder_path, "wm_info.pkl")
-        with open(file7, 'wb') as output_file:
-            pickle.dump(
-                wm_info, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['wm_info'] = wm_info
 
         ppa_info = {'lower_percent': lower_percent,
                     'higher_percent': higher_percent,
                     'lower_penalty': lower_penalty,
                     'higher_discount': higher_discount}
-
-        file8 = os.path.join(self.folder_path, "ppa_info.pkl")
-        with open(file8, 'wb') as output_file:
-            pickle.dump(
-                ppa_info, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['ppa_info'] = ppa_info
 
     def aux(self):
 
@@ -503,11 +433,7 @@ class Input(object):
         fuel = df['Unnamed: 2'][4]
         efficiency = df['Unnamed: 3'][4]
         data = {'fuel': fuel, 'efficiency': efficiency}
-
-        file = os.path.join(self.folder_path, "aux_heat.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                data, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['aux_heat'] = data
 
         # fuel then energy density and cost
         fuel_info = {
@@ -520,11 +446,7 @@ class Input(object):
             df['Unnamed: 2'][9]: {
                 'energy_density': df['Unnamed: 3'][9],
                 'cost': df['Unnamed: 4'][9]}}
-
-        file = os.path.join(self.folder_path, "fuel_info.pkl")
-        with open(file, 'wb') as output_file:
-            pickle.dump(
-                fuel_info, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['fuel_info'] = fuel_info
 
     def thermal_storage(self):
 
@@ -548,9 +470,7 @@ class Input(object):
                                 21: 'overall_factor'
                                 })
         df = df.reset_index(drop=True)
-
-        file1 = os.path.join(self.folder_path, "thermal_storage.pkl")
-        df.to_pickle(file1)
+        self.container['thermal_storage'] = df
 
     def heat_pump(self):
 
@@ -569,9 +489,7 @@ class Input(object):
                                               6: 'minimum_output',
                                               7: 'data_input'})
         hp_basics = hp_basics.reset_index(drop=True)
-
-        file1 = os.path.join(self.folder_path, "hp_basics.pkl")
-        hp_basics.to_pickle(file1)
+        self.container['hp_basics'] = hp_basics
 
         # RHI inputs
         RHI_type = df['Unnamed: 13'][3]
@@ -585,19 +503,11 @@ class Input(object):
                'fixed_rate': fixed_rate,
                'tier_1': tier_1,
                'tier_2': tier_2}
-
-        file2 = os.path.join(self.folder_path, "RHI.pkl")
-        with open(file2, 'wb') as output_file:
-            pickle.dump(
-                RHI, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['RHI'] = RHI
 
         simple = df.iloc[9:11]
         simple = simple['Unnamed: 3'][10]
-
-        file2 = os.path.join(self.folder_path, "hp_simple.pkl")
-        with open(file2, 'wb') as output_file:
-            pickle.dump(
-                simple, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.container['hp_simple'] = simple
 
         lorentz = df.iloc[13:19]
         lorentz = lorentz.transpose()
@@ -612,9 +522,7 @@ class Input(object):
                                           17: 'ambient_temp_out',
                                           18: 'elec_capacity'})
         lorentz = lorentz.reset_index(drop=True)
-
-        file3 = os.path.join(self.folder_path, "lorentz.pkl")
-        lorentz.to_pickle(file3)
+        self.container['lorentz'] = lorentz
 
         regression_temp1 = df.iloc[21:25]
         regression_temp1 = regression_temp1.transpose()
@@ -626,9 +534,7 @@ class Input(object):
         regression_temp1 = regression_temp1.rename(columns={21: 'flow_temp',
                                                             22: 'return_temp'})
         regression_temp1 = regression_temp1.reset_index(drop=True)
-
-        file4 = os.path.join(self.folder_path, "regression_temp1.pkl")
-        regression_temp1.to_pickle(file4)
+        self.container['regression_temp1'] = regression_temp1
 
         regression_temp2 = df.iloc[21:25]
         regression_temp2 = regression_temp2.transpose()
@@ -640,9 +546,7 @@ class Input(object):
         regression_temp2 = regression_temp2.rename(columns={21: 'flow_temp',
                                                             22: 'return_temp'})
         regression_temp2 = regression_temp2.reset_index(drop=True)
-
-        file5 = os.path.join(self.folder_path, "regression_temp2.pkl")
-        regression_temp2.to_pickle(file5)
+        self.container['regression_temp2'] = regression_temp2
 
         regression_temp3 = df.iloc[34:36]
         regression_temp3 = regression_temp3.transpose()
@@ -653,9 +557,7 @@ class Input(object):
         regression_temp3 = regression_temp3.rename(columns={34: 'flow_temp',
                                                             35: 'return_temp'})
         regression_temp3 = regression_temp3.reset_index(drop=True)
-
-        file6 = os.path.join(self.folder_path, "regression_temp3.pkl")
-        regression_temp3.to_pickle(file6)
+        self.container['regression_temp3'] = regression_temp3
 
         regression_temp4 = df.iloc[34:36]
         regression_temp4 = regression_temp4.transpose()
@@ -666,9 +568,7 @@ class Input(object):
         regression_temp4 = regression_temp4.rename(columns={34: 'flow_temp',
                                                             35: 'return_temp'})
         regression_temp4 = regression_temp4.reset_index(drop=True)
-
-        file7 = os.path.join(self.folder_path, "regression_temp4.pkl")
-        regression_temp4.to_pickle(file7)
+        self.container['regression_temp4'] = regression_temp4
 
         regression1 = df.iloc[23:33]
         regression1 = regression1.drop(columns={'Unnamed: 0', 'Unnamed: 1',
@@ -685,9 +585,7 @@ class Input(object):
                                                   'Unnamed: 5': 'capacity_percentage'})
         regression1 = regression1.drop([23, 24])
         regression1 = regression1.reset_index(drop=True)
-
-        file8 = os.path.join(self.folder_path, "regression1.pkl")
-        regression1.to_pickle(file8)
+        self.container['regression1'] = regression1
 
         regression2 = df.iloc[23:33]
         regression2 = regression2.drop(columns={'Unnamed: 0', 'Unnamed: 1',
@@ -704,9 +602,7 @@ class Input(object):
                                                   'Unnamed: 9': 'capacity_percentage'})
         regression2 = regression2.drop([23, 24])
         regression2 = regression2.reset_index(drop=True)
-
-        file9 = os.path.join(self.folder_path, "regression2.pkl")
-        regression2.to_pickle(file9)
+        self.container['regression2'] = regression2
 
         regression3 = df.iloc[39:46]
         regression3 = regression3.drop(columns={'Unnamed: 0', 'Unnamed: 1',
@@ -722,9 +618,7 @@ class Input(object):
                                                   'Unnamed: 4': 'duty',
                                                   'Unnamed: 5': 'capacity_percentage'})
         regression3 = regression3.reset_index(drop=True)
-
-        file10 = os.path.join(self.folder_path, "regression3.pkl")
-        regression3.to_pickle(file10)
+        self.container['regression3'] = regression3
 
         regression4 = df.iloc[39:46]
         regression4 = regression4.drop(columns={'Unnamed: 0', 'Unnamed: 1',
@@ -740,6 +634,4 @@ class Input(object):
                                                   'Unnamed: 8': 'duty',
                                                   'Unnamed: 9': 'capacity_percentage'})
         regression4 = regression4.reset_index(drop=True)
-
-        file11 = os.path.join(self.folder_path, "regression4.pkl")
-        regression4.to_pickle(file11)
+        self.container['regression4'] = regression4

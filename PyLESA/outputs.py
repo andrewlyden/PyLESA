@@ -2,7 +2,8 @@ import os
 import pandas as pd
 import numpy as np
 import shutil
-from pandas.plotting import register_matplotlib_converters
+import pickle
+# import register_matplotlib_converters
 import matplotlib.pyplot as plt
 
 # 3d plotting
@@ -40,7 +41,7 @@ plt.style.available
 'seaborn-talk',
 'seaborn-poster']
 """
-register_matplotlib_converters()
+# register_matplotlib_converters()
 # plt.style.use('seaborn-paper')
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 6})
@@ -77,29 +78,15 @@ def run_plots(name, subname):
 def run_KPIs(name):
 
     my3DPlots = ThreeDPlots(name)
-    print 'Initialised'
     my3DPlots.KPIs_to_csv()
-    print 'CSV created'
     my3DPlots.plot_opex()
-    print 'opex'
     my3DPlots.plot_RES()
-    print 'RES total'
     my3DPlots.plot_heat_from_RES()
-    print 'heat from RES'
-    my3DPlots.plot_HP_met_RES()
-    print 'heat pump from RES'
     my3DPlots.plot_HP_size_ratio()
-    print 'hp size ratio'
     my3DPlots.plot_HP_utilisation()
-    print 'hp utilisation'
     my3DPlots.plot_capital_cost()
-    print 'capital cost'
     my3DPlots.plot_LCOH()
-    print 'LCOH'
     my3DPlots.plot_COH()
-    print 'COH'
-
-    print 'DONE'
 
 
 class Plot(object):
@@ -126,7 +113,7 @@ class Plot(object):
         self.first_hour = controller_info['first_hour']
 
         # creates a folder for keeping all the
-        # pickle input files as saved from the excel file
+        # outputs as saved from the excel file
         if os.path.isdir(self.folder_path) is False:
             os.mkdir(self.folder_path)
 
@@ -1542,11 +1529,12 @@ class ThreeDPlots(object):
         elif os.path.isdir(self.folder_path) is True:
             shutil.rmtree(self.folder_path)
             os.mkdir(self.folder_path)
-        # set of parameters
+        # read in set of parameters from input
         file1 = os.path.join(
-            os.path.dirname(__file__), "..", "inputs",
-            self.name[:-5], "parametric_analysis.pkl")
-        pa = pd.read_pickle(file1)
+            os.path.dirname(__file__), "..", "inputs", name[:-5],
+            "inputs.pkl")
+        self.input = pd.read_pickle(file1)
+        pa = self.input['parametric_analysis']
         # list set of heat pump sizes
         hp_sizes = []
         # if no step then only one size looked at
@@ -1569,7 +1557,7 @@ class ThreeDPlots(object):
                 combos.append([hp_sizes[i], ts_sizes[j]])
         self.combos = combos
 
-        # strings for all combos to create folder
+        # strings for all combos to READ OUTPUTS
         results = {}
         subnames = []
         for i in range(len(combos)):
@@ -1579,7 +1567,6 @@ class ThreeDPlots(object):
             file_output_pickle = os.path.join(
                 os.path.dirname(__file__), '..', 'outputs',
                 self.name[:-5], subname, 'outputs.pkl')
-            print file_output_pickle
             results[subname] = pd.read_pickle(file_output_pickle)
         self.results = results
         self.subnames = subnames
@@ -1707,40 +1694,40 @@ class ThreeDPlots(object):
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
-    def plot_HP_met_RES(self):
-        HP_met_RES = []
+    # def plot_HP_met_RES(self):
+    #     HP_met_RES = []
 
-        for x in range(len(self.subnames)):
-            _RES_used = Calcs(
-                self.name, self.subnames[x],
-                self.results).HP_met_RES()
-            HP_met_RES.append(_RES_used)
+    #     for x in range(len(self.subnames)):
+    #         _RES_used = Calcs(
+    #             self.name, self.subnames[x],
+    #             self.results).HP_met_RES()
+    #         HP_met_RES.append(_RES_used)
 
-        z = HP_met_RES
+    #     z = HP_met_RES
 
-        plt.style.use('classic')
+    #     plt.style.use('classic')
 
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
+    #     fig = plt.figure()
+    #     ax = fig.gca(projection='3d')
 
-        x = self.heat_pump_sizes_x()
-        y = self.thermal_store_sizes_y()
+    #     x = self.heat_pump_sizes_x()
+    #     y = self.thermal_store_sizes_y()
 
-        ax.plot_trisurf(x, y, z, linewidth=0, antialiased=False,
-                        cmap=plt.cm.Spectral)
+    #     ax.plot_trisurf(x, y, z, linewidth=0, antialiased=False,
+    #                     cmap=plt.cm.Spectral)
 
-        ax.set_xlabel('Heat pump sizes (kW)', fontsize=10)
-        ax.set_ylabel('Thermal storage capacity ($m^3$)', fontsize=10)
-        ax.set_zlabel('Heat pump usage from RES (%)', fontsize=10)
-        ax.xaxis.labelpad = 15
-        ax.yaxis.labelpad = 15
-        ax.zaxis.labelpad = 15
-        # plt.show()
-        plt.tight_layout()
+    #     ax.set_xlabel('Heat pump sizes (kW)', fontsize=10)
+    #     ax.set_ylabel('Thermal storage capacity ($m^3$)', fontsize=10)
+    #     ax.set_zlabel('Heat pump usage from RES (%)', fontsize=10)
+    #     ax.xaxis.labelpad = 15
+    #     ax.yaxis.labelpad = 15
+    #     ax.zaxis.labelpad = 15
+    #     # plt.show()
+    #     plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'HP_from_RES.png')
-        plt.savefig(fileout, format='png', dpi=300)
-        plt.close()
+    #     fileout = os.path.join(self.folder_path, 'HP_from_RES.png')
+    #     plt.savefig(fileout, format='png', dpi=300)
+    #     plt.close()
 
     def plot_HP_size_ratio(self):
 
@@ -1931,154 +1918,60 @@ class ThreeDPlots(object):
         ts_sizes = self.thermal_store_sizes_y()
 
         opex = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            opex[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).operating_cost()
-
         RES_used = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            RES_used[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).RES_self_consumption()
-
         total_RES_self_consumption = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            total_RES_self_consumption[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).total_RES_self_consumption()
-
         grid_RES_used = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            grid_RES_used[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).grid_RES_used()
-
         total_RES_used = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            total_RES_used[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).total_RES_used()
-
         HP_size_ratio = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            HP_size_ratio[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).HP_size_ratio()
-
         HP_utilisation = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            HP_utilisation[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).HP_utilisation()
-
         capital_cost = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            capital_cost[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).capital_cost()
-
         cost_of_heat = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            cost_of_heat[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).cost_of_heat()
-
         levelised_cost_of_heat = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            levelised_cost_of_heat[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).levelised_cost_of_heat()
-
         levelised_cost_of_energy = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            levelised_cost_of_energy[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).levelised_cost_of_energy()
-
         cost_elec = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            cost_elec[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).cost_elec()
-
         lifetime_cost = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            lifetime_cost[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).lifetime_cost()
-
         sum_hp_output = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_hp_output[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_hp_output()
-
         sum_hp_usage = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_hp_usage[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_hp_usage()
-
         scop = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            scop[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).calc_scop()
-
         sum_aux_output = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_aux_output[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_aux_output()
-
         sum_ed_import = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_ed_import[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_ed_import()
-
         sum_RES = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_RES[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_RES()
-
         sum_import = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_import[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_import()
-
         sum_export = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            sum_export[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).sum_export()
-
         demand_met_RES = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            demand_met_RES[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).demand_met_RES()
-
         HP_met_RES = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            HP_met_RES[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).HP_met_RES()
-
         days_storage_content = np.zeros(len(self.subnames))
-        for x in range(len(self.subnames)):
-            days_storage_content[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).days_storage_content()
-
         heat_met_RES = np.zeros(len(self.subnames))
+
         for x in range(len(self.subnames)):
-            heat_met_RES[x] = Calcs(
-                self.name, self.subnames[x],
-                self.results).heat_met_RES()
+
+            myCalcs = Calcs(self.name, self.subnames[x], self.results)
+
+            opex[x] = myCalcs.operating_cost()
+            RES_used[x] = myCalcs.RES_self_consumption()
+            total_RES_self_consumption[x] = myCalcs.total_RES_self_consumption()
+            grid_RES_used[x] = myCalcs.grid_RES_used()
+            total_RES_used[x] = myCalcs.total_RES_used()
+            HP_size_ratio[x] = myCalcs.HP_size_ratio()
+            HP_utilisation[x] = myCalcs.HP_utilisation()
+            capital_cost[x] = myCalcs.capital_cost()
+            cost_of_heat[x] = myCalcs.cost_of_heat()
+            levelised_cost_of_heat[x] = myCalcs.levelised_cost_of_heat()
+            levelised_cost_of_energy[x] = myCalcs.levelised_cost_of_energy()
+            cost_elec[x] = myCalcs.cost_elec()
+            lifetime_cost[x] = myCalcs.lifetime_cost()
+            sum_hp_output[x] = myCalcs.sum_hp_output()
+            sum_hp_usage[x] = myCalcs.sum_hp_usage()
+            scop[x] = myCalcs.calc_scop()
+            sum_aux_output[x] = myCalcs.sum_aux_output()
+            sum_ed_import[x] = myCalcs.sum_ed_import()
+            sum_RES[x] = myCalcs.sum_RES()
+            sum_import[x] = myCalcs.sum_import()
+            sum_export[x] = myCalcs.sum_export()
+            demand_met_RES[x] = myCalcs.demand_met_RES()
+            HP_met_RES[x] = myCalcs.HP_met_RES()
+            days_storage_content[x] = myCalcs.days_storage_content()
+            heat_met_RES[x] = myCalcs.heat_met_RES()
 
         economic_data = np.array(
             [hp_sizes, ts_sizes,
@@ -2095,6 +1988,12 @@ class ThreeDPlots(object):
                       'levelised_cost_of_heat',
                       'levelised_cost_of_energy'
                       ]
+
+        pickle_name = 'KPI_economic_' + self.name[:-5] + '.pkl'
+        pickleout = os.path.join(self.folder_path, pickle_name)
+        with open(pickleout, 'wb') as handle:
+            pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
         file_name = 'KPI_economic_' + self.name[:-5] + '.csv'
         fileout = os.path.join(self.folder_path, file_name)
         df.to_csv(fileout, index=False)
@@ -2118,6 +2017,12 @@ class ThreeDPlots(object):
                       'HP_size_ratio', 'HP_utilisation',
                       'days_storage_content'
                       ]
+
+        pickle_name = 'KPI_technical_' + self.name[:-5] + '.pkl'
+        pickleout = os.path.join(self.folder_path, pickle_name)
+        with open(pickleout, 'wb') as handle:
+            pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
         file_name = 'KPI_technical_' + self.name[:-5] + '.csv'
         fileout = os.path.join(self.folder_path, file_name)
         df.to_csv(fileout, index=False)
@@ -2135,6 +2040,12 @@ class ThreeDPlots(object):
                       'sum_aux_output', 'sum_ed_import', 'sum_RES',
                       'sum_import', 'sum_export'
                       ]
+
+        pickle_name = 'output_' + self.name[:-5] + '.pkl'
+        pickleout = os.path.join(self.folder_path, pickle_name)
+        with open(pickleout, 'wb') as handle:
+            pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
         file_name = 'output_' + self.name[:-5] + '.csv'
         fileout = os.path.join(self.folder_path, file_name)
         df.to_csv(fileout, index=False)

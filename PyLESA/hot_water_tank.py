@@ -12,6 +12,7 @@ from scipy.integrate import odeint
 
 import weather
 
+
 class HotWaterTank(object):
 
     def __init__(self, capacity, insulation, location, number_nodes,
@@ -88,7 +89,7 @@ class HotWaterTank(object):
         elif self.insulation == 'Polystyrene':
             k = 0.035
         else:
-            print 'Error in choice of insulation'
+            print('Error in choice of insulation')
 
         return k
 
@@ -149,7 +150,7 @@ class HotWaterTank(object):
             ambient_temp = 15.0
 
         else:
-            print 'Error in location definition'
+            print('Error in location definition')
 
         return ambient_temp
 
@@ -193,7 +194,7 @@ class HotWaterTank(object):
             for node in node_list:
                 function[node] = 0
 
-        # print function, 'dis_function'
+        # print(function, 'dis_function')
         return function
 
     def discharging_bottom_node(self, state, nodes_temp,
@@ -227,7 +228,7 @@ class HotWaterTank(object):
             for node in node_list:
                 function[node] = 0
 
-        # print function, 'dis_function_bottom_node'
+        # print(function, 'dis_function_bottom_node')
         return function
 
     def charging_function(self, state, nodes_temp, source_temp):
@@ -243,8 +244,8 @@ class HotWaterTank(object):
         total_nodes = self.number_nodes
         node_list = range(total_nodes)
         function = {}
-        # print source_temp
-        # print nodes_temp[0]
+        # print(source_temp)
+        # print(nodes_temp[0])
         if state == 'charging':
 
             for node in node_list:
@@ -272,7 +273,7 @@ class HotWaterTank(object):
         elif state == 'discharging' or 'standby':
             for node in node_list:
                 function[node] = 0
-        # print function, 'cha_function'
+        # print(function, 'cha_function')
         return function
 
     def charging_top_node(self, state):
@@ -284,7 +285,7 @@ class HotWaterTank(object):
                 function[node] = 1
             else:
                 function[node] = 0
-        # print function, 'charging_top_node'
+        # print(function, 'charging_top_node')
 
         return function
 

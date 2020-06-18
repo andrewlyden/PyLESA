@@ -185,7 +185,7 @@ class HeatPump(object):
             return HP_resource[['ambient_temp']]
 
         else:
-            print 'ERROR invalid heat pump type'
+            print('ERROR invalid heat pump type')
 
     def performance(self):
         """performance over year of heat pump

@@ -1,3 +1,3 @@
 import inputs
 
-inputs.windturbine_user()
+myInputs = inputs.Inputs('WWHC_FOC_WM', 'subname')

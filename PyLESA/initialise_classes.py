@@ -1,6 +1,6 @@
 """initialises all the classes
 
-simplifies initialising all the models for use 
+simplifies initialising all the models for use
 in the control scripts
 """
 

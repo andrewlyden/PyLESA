@@ -5,7 +5,7 @@ useful functions which are used throughout
 
 import pandas as pd
 
-import cPickle as pickle
+import pickle
 from collections import OrderedDict
 
 

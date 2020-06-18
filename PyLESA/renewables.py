@@ -10,7 +10,6 @@ import math
 import os
 import numpy as np
 
-import tools as t
 import weather
 import inputs
 
@@ -30,7 +29,7 @@ from windpowerlib.wind_farm import WindFarm
 # # Change the logging level if you want more or less messages
 # import logging
 # logging.getLogger().setLevel(logging.DEBUG)
-
+np.seterr(invalid='ignore')
 
 def sum_renewable_generation():
 
@@ -175,6 +174,8 @@ class PV(object):
 
         # of inverters and returns a pandas df
         CEC_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
+        # print(CEC_inverters)
+        inverter1 = 'iPower__SHO_4_8__240V_'
         self.inverter = CEC_inverters[inverter1]
 
         # tech parameters
@@ -243,7 +244,7 @@ class PV(object):
         #     columns=['ghi', 'dni', 'dhi', 'temp_air', 'wind_speed'],
         #     index=[pd.Timestamp('20170401 1200', tz='Europe/London')])
 
-        mc.run_model(times=weather.index, weather=weather)
+        mc.run_model(weather=weather)
         # multiply by system losses
         # also multiply by correction factor
         power = (mc.ac.fillna(value=0).round(2) *
@@ -252,23 +253,23 @@ class PV(object):
         power[power < 0] = 0
         # multiply by monthly correction factors
         # for correcting MEERA solar data set
-        # cf = [1.042785944,
-        #       1.059859907,
-        #       1.037299072,
-        #       0.984286745,
-        #       0.995849527,
-        #       0.973795815,
-        #       1.003315908,
-        #       1.014427134,
-        #       1.046833,
-        #       1.091837017,
-        #       1.039504694,
-        #       0.95520793]
+        cf = [1.042785944,
+              1.059859907,
+              1.037299072,
+              0.984286745,
+              0.995849527,
+              0.973795815,
+              1.003315908,
+              1.014427134,
+              1.046833,
+              1.091837017,
+              1.039504694,
+              0.95520793]
 
-        # # multiply by correction factor for each hour
-        # for hour in range(8760):
-        #     month = int(math.floor(hour / 730))
-        #     power[hour] = power[hour] * cf[month]
+        # multiply by correction factor for each hour
+        for hour in range(8760):
+            month = int(math.floor(hour / 730))
+            power[hour] = power[hour] * cf[month]
 
         power = power.reset_index(drop=True)
 
@@ -358,15 +359,12 @@ class Windturbine(object):
         # initialises a wind turbine object using
         # the WindTurbine class from windpowerlib
         UserTurbine = WindTurbine(**myTurbine)
-
-        modelchain = ModelChain1(UserTurbine)
-
-        mc_my_turbine = modelchain.run_model(weather)
+        mc_my_turbine = ModelChain1(UserTurbine).run_model(weather)
 
         # 1000 factor to make it into kW,
         # and the multi to give number of wind turbines
-        # multiply by 0.5 to correct MEERA dataset
-        series = (mc_my_turbine.power_output * 0.5 * multi / 1000).round(2)
+        # multiply by 0.5 to correct MEERA dataset if needed
+        series = (mc_my_turbine.power_output * multi / 1000.).round(2)
         df = series.to_frame()
         df.columns = ['wind_user']
         df = df.reset_index(drop=True)
@@ -397,22 +395,36 @@ class Windturbine(object):
         # power is provided in an own csv file
 
         csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "data", 'power_curves.csv')
+            os.path.dirname(__file__), "..", "data", 'oedb')#, 'power_curves.csv')
 
         myTurbine = {
-            'name': self.turbine_name,  # turbine type as in file
+            'turbine_type': self.turbine_name,  # turbine type as in file
             'hub_height': self.hub_height,  # in m
             'rotor_diameter': self.rotor_diameter,  # in m
-            'fetch_curve': 'power_curve',  # using power_curve csv
-            'data_source': csv_path
+            'path': csv_path  # using power_curve csv
         }
+
+        # own specifications for ModelChain setup
+        modelchain_data = {
+            'wind_speed_model': 'logarithmic',  # 'logarithmic' (default),
+                                                # 'hellman' or
+                                                # 'interpolation_extrapolation'
+            'density_model': 'barometric',  # 'barometric' (default), 'ideal_gas' or
+                                           # 'interpolation_extrapolation'
+            'temperature_model': 'linear_gradient',  # 'linear_gradient' (def.) or
+                                                     # 'interpolation_extrapolation'
+            'power_output_model': 'power_curve',  # 'power_curve' (default) or
+                                                  # 'power_coefficient_curve'
+            'density_correction': False,  # False (default) or True
+            'obstacle_height': 0,  # default: 0
+            'hellman_exp': None}  # None (default) or None
 
         # initialise WindTurbine object
         turbineObj = WindTurbine(**myTurbine)
 
         weather = self.weather_data()
 
-        mc_my_turbine = ModelChain1(turbineObj).run_model(weather)
+        mc_my_turbine = ModelChain1(turbineObj, **modelchain_data).run_model(weather)
         # write power output timeseries to WindTurbine object
         # divide by 1000 to keep in kW
         # multply by 0.5 for correcting reanalysis dataset
@@ -435,13 +447,12 @@ class Windturbine(object):
             return df
 
         csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "data", 'power_curves.csv')
+            os.path.dirname(__file__), "..", "data", 'oedb')
         myTurbine = {
-            'name': self.turbine_name,  # turbine type as in file
+            'turbine_type': self.turbine_name,  # turbine type as in file
             'hub_height': self.hub_height,  # in m
             'rotor_diameter': self.rotor_diameter,  # in m
-            'fetch_curve': 'power_curve',  # using power_curve csv
-            'data_source': csv_path
+            'path': csv_path  # using power_curve csv
         }
 
         # initialise WindTurbine object

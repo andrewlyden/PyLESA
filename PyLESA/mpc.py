@@ -7,7 +7,7 @@ from gekko import GEKKO
 import numpy as np
 import matplotlib.pyplot as plt
 from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
-import cPickle as pickle
+import pickle
 import os
 
 import initialise_classes

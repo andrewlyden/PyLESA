@@ -12,18 +12,15 @@ class Inputs(object):
     def __init__(self, name, subname):
 
         self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name[:-5], subname)
+            os.path.dirname(__file__), "..", "inputs", name[:-5], subname + '.pkl')
+        self.container = pd.read_pickle(self.folder_path)
 
     def controller(self):
 
-        file = os.path.join(self.folder_path, 'controller_info.pkl')
-        controller_info = pd.read_pickle(file)
-        file = os.path.join(self.folder_path, 'horizon.pkl')
-        horizon = pd.read_pickle(file)
-        file = os.path.join(self.folder_path, 'import_setpoint.pkl')
-        import_setpoint = pd.read_pickle(file)
-        file = os.path.join(self.folder_path, 'fixed_order_info.pkl')
-        fixed_order_info = pd.read_pickle(file)
+        controller_info = self.container['controller_info']
+        horizon = self.container['horizon']
+        import_setpoint = self.container['import_setpoint']
+        fixed_order_info = self.container['fixed_order_info']
 
         inputs = {'controller_info': controller_info,
                   'horizon': horizon,
@@ -41,11 +38,8 @@ class Inputs(object):
         Returns:
             dict -- inputs for the PV class
         """
-
-        file1 = os.path.join(self.folder_path, "PV_spec.pkl")
-        PV_spec = pd.read_pickle(file1)
-        file2 = os.path.join(self.folder_path, "PV_location.pkl")
-        PV_location = pd.read_pickle(file2)
+        PV_spec = self.container['PV_spec']
+        PV_location = self.container['PV_location']
 
         loc = PV_location.to_dict('list')
         spec = PV_spec.to_dict('list')
@@ -66,11 +60,8 @@ class Inputs(object):
 
     def windturbine_user(self):
 
-        file1 = os.path.join(self.folder_path, "wind_user.pkl")
-        wind_user = pd.read_pickle(file1)
-
-        file2 = os.path.join(self.folder_path, "power_curve.pkl")
-        power_curve = pd.read_pickle(file2)
+        wind_user = self.container['wind_user']
+        power_curve = self.container['power_curve']
 
         # create two dicts for holding csv data
         myTurbine = wind_user.to_dict('list')
@@ -89,11 +80,10 @@ class Inputs(object):
 
     def windturbine_database(self):
 
-        file1 = os.path.join(self.folder_path, "wind_database.pkl")
-        wind_user = pd.read_pickle(file1)
+        wind_database = self.container['wind_database']
 
         # create dict for holding csv data
-        myTurbine = wind_user.to_dict('list')
+        myTurbine = wind_database.to_dict('list')
 
         inputs = {'turbine_name': myTurbine['turbine_name'][0],
                   'hub_height': myTurbine['hub_height'][0],
@@ -105,15 +95,11 @@ class Inputs(object):
 
     def wind_farm(self):
 
-        file1 = os.path.join(self.folder_path, "wind_farm.pkl")
-        wf = pd.read_pickle(file1)
-
-        return wf
+        return self.container['wind_farm']
 
     def wind_farm_weather(self):
 
-        file3 = os.path.join(self.folder_path, "wind_farm_resources.pkl")
-        resources = pd.read_pickle(file3)
+        resources = self.container['wind_farm_resources']
 
         inputs = {'wind_speed_10': resources[['wind_speed_10']],
                   'wind_speed_50': resources[['wind_speed_50']],
@@ -126,8 +112,7 @@ class Inputs(object):
 
     def weather(self):
 
-        file3 = os.path.join(self.folder_path, "resources.pkl")
-        resources = pd.read_pickle(file3)
+        resources = self.container['resources']
 
         inputs = {'DHI': resources[['DHI']],
                   'GHI': resources[['GHI']],
@@ -145,10 +130,8 @@ class Inputs(object):
 
     def aux(self):
 
-        file1 = os.path.join(self.folder_path, "aux_heat.pkl")
-        spec = pd.read_pickle(file1)
-        file2 = os.path.join(self.folder_path, 'fuel_info.pkl')
-        fuel_info = pd.read_pickle(file2)
+        spec = self.container['aux_heat']
+        fuel_info = self.container['fuel_info']
 
         inputs = {'fuel': spec['fuel'],
                   'efficiency': spec['efficiency'],
@@ -158,11 +141,8 @@ class Inputs(object):
 
     def demands(self):
 
-        file1 = os.path.join(self.folder_path, "demand_input_variable.pkl")
-        dem_var = pd.read_pickle(file1)
-
-        file2 = os.path.join(self.folder_path, "demand_input_static.pkl")
-        dem_static = pd.read_pickle(file2)
+        dem_var = self.container['demand_input_variable']
+        dem_static = self.container['demand_input_static']
 
         inputs = {'heat_demand': dem_var['heat demand'],
                   'elec_demand': dem_var['electrical demand'],
@@ -175,8 +155,7 @@ class Inputs(object):
 
     def RHI(self):
 
-        file1 = os.path.join(self.folder_path, "RHI.pkl")
-        RHI = pd.read_pickle(file1)
+        RHI = self.container['RHI']
 
         RHI_type = RHI['RHI_type']
         tariff_type = RHI['tariff_type']
@@ -194,8 +173,7 @@ class Inputs(object):
 
     def heatpump_basics(self):
 
-        file1 = os.path.join(self.folder_path, "hp_basics.pkl")
-        hp = pd.read_pickle(file1)
+        hp = self.container['hp_basics']
 
         # the inputs which specify the heat pump to be modelled
         hp_type = hp['heat_pump_type'][0]
@@ -218,17 +196,14 @@ class Inputs(object):
 
     def heatpump_simple(self):
 
-        file1 = os.path.join(self.folder_path, "hp_simple.pkl")
-        hp = pd.read_pickle(file1)
-
+        hp = self.container['hp_simple']
         cop = hp
 
         return cop
 
     def heatpump_lorentz(self):
 
-        file1 = os.path.join(self.folder_path, "lorentz.pkl")
-        lorentz = pd.read_pickle(file1)
+        lorentz = self.container['lorentz']
 
         cop = lorentz['COP'][0]
         flow_temp_spec = lorentz['flow_temp'][0]
@@ -248,11 +223,8 @@ class Inputs(object):
 
     def heatpump_standard_regression(self):
 
-        file1 = os.path.join(self.folder_path, "regression1.pkl")
-        regression1 = pd.read_pickle(file1)
-
-        file1a = os.path.join(self.folder_path, "regression_temp1.pkl")
-        regression_temp1 = pd.read_pickle(file1a)
+        regression1 = self.container['regression1']
+        regression_temp1 = self.container['regression_temp1']
 
         dic = {'flow_temp': [regression_temp1['flow_temp'][0],
                              regression_temp1['flow_temp'][0],
@@ -266,11 +238,8 @@ class Inputs(object):
         df = pd.DataFrame(data=dic)
         data1 = pd.concat([regression1, df], axis=1)
 
-        file2 = os.path.join(self.folder_path, "regression2.pkl")
-        regression2 = pd.read_pickle(file2)
-
-        file2a = os.path.join(self.folder_path, "regression_temp2.pkl")
-        regression_temp2 = pd.read_pickle(file2a)
+        regression2 = self.container['regression2']
+        regression_temp2 = self.container['regression_temp2']
 
         dic2 = {'flow_temp': [regression_temp2['flow_temp'][0],
                               regression_temp2['flow_temp'][0],
@@ -284,11 +253,8 @@ class Inputs(object):
         df2 = pd.DataFrame(data=dic2)
         data2 = pd.concat([regression2, df2], axis=1)
 
-        file3 = os.path.join(self.folder_path, "regression3.pkl")
-        regression3 = pd.read_pickle(file3)
-
-        file3a = os.path.join(self.folder_path, "regression_temp3.pkl")
-        regression_temp3 = pd.read_pickle(file3a)
+        regression3 = self.container['regression3']
+        regression_temp3 = self.container['regression_temp3']
 
         dic3 = {'flow_temp': [regression_temp3['flow_temp'][0],
                               regression_temp3['flow_temp'][0],
@@ -302,11 +268,8 @@ class Inputs(object):
         df3 = pd.DataFrame(data=dic3)
         data3 = pd.concat([regression3, df3], axis=1)
 
-        file4 = os.path.join(self.folder_path, "regression4.pkl")
-        regression4 = pd.read_pickle(file4)
-
-        file4a = os.path.join(self.folder_path, "regression_temp4.pkl")
-        regression_temp4 = pd.read_pickle(file4a)
+        regression4 = self.container['regression4']
+        regression_temp4 = self.container['regression_temp4']
 
         dic4 = {'flow_temp': [regression_temp4['flow_temp'][0],
                               regression_temp4['flow_temp'][0],
@@ -342,8 +305,7 @@ class Inputs(object):
 
     def hot_water_tank(self):
 
-        file1 = os.path.join(self.folder_path, "thermal_storage.pkl")
-        ts = pd.read_pickle(file1)
+        ts = self.container['thermal_storage']
 
         capacity = ts['capacity'][0]
         insulation = ts['insulation'][0]
@@ -378,45 +340,19 @@ class Inputs(object):
 
     def grid(self):
 
-        file = os.path.join(self.folder_path, "export.pkl")
-        export = pd.read_pickle(file)
-
-        file0 = os.path.join(self.folder_path, "tariff_choice.pkl")
-        tariff_choice = pd.read_pickle(file0)
-
-        file1 = os.path.join(self.folder_path, "balancing_mechanism.pkl")
-        balancing_mechanism = pd.read_pickle(file1)
-
-        file2 = os.path.join(self.folder_path, "grid_services.pkl")
-        grid_services = pd.read_pickle(file2)
-
-        file3 = os.path.join(self.folder_path, "grid_services_series.pkl")
-        grid_services_series = pd.read_pickle(file3)
-
-        file4 = os.path.join(self.folder_path, "flat_rates.pkl")
-        flat_rates = pd.read_pickle(file4)
-
-        file5 = os.path.join(self.folder_path, "variable_periods.pkl")
-        variable_periods = pd.read_pickle(file5)
-
-        file5b = os.path.join(self.folder_path, "variable_periods_year.pkl")
-        variable_periods_year = pd.read_pickle(file5b)
-
-        file6 = os.path.join(self.folder_path, "wholesale_market.pkl")
-        wholesale_market = pd.read_pickle(file6)
-
-        file7 = os.path.join(
-            self.folder_path, "balancing_mechanism_series.pkl")
-        balancing_mechanism_series = pd.read_pickle(file7)
-
-        file8 = os.path.join(self.folder_path, "ppa_output.pkl")
-        ppa_output = pd.read_pickle(file8)
-
-        file9 = os.path.join(self.folder_path, "wm_info.pkl")
-        wm_info = pd.read_pickle(file9)
-
-        file10 = os.path.join(self.folder_path, "ppa_info.pkl")
-        ppa_info = pd.read_pickle(file10)
+        export = self.container['export']
+        tariff_choice = self.container['tariff_choice']
+        balancing_mechanism = self.container['balancing_mechanism']
+        grid_services = self.container['grid_services']
+        grid_services_series = self.container['grid_services_series']
+        flat_rates = self.container['flat_rates']
+        variable_periods = self.container['variable_periods']
+        variable_periods_year = self.container['variable_periods_year']
+        wholesale_market = self.container['wholesale_market']
+        balancing_mechanism_series = self.container['balancing_mechanism_series']
+        ppa_output = self.container['ppa_output']
+        wm_info = self.container['wm_info']
+        ppa_info = self.container['ppa_info']
 
         inputs = {'tariff_choice': tariff_choice,
                   'balancing_mechanism': balancing_mechanism,
@@ -436,8 +372,7 @@ class Inputs(object):
 
     def electrical_storage(self):
 
-        file1 = os.path.join(self.folder_path, "electrical_storage.pkl")
-        es = pd.read_pickle(file1)
+        es = self.container['electrical_storage']
 
         capacity = es['capacity'][0]
         initial_state = es['initial state'][0]

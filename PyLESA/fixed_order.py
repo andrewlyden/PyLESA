@@ -12,14 +12,12 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import cPickle as pickle
+import pickle
 
 from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 
 import initialise_classes
 import inputs
-
-'quick commit'
 
 
 class FixedOrder(object):

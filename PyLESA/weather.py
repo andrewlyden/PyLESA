@@ -57,10 +57,10 @@ class Weather(object):
         weather_df.index = pd.date_range('1/1/2012',
                                          periods=8760,
                                          freq='H')
-        weather_df.columns = [np.array(['temperature',
+        weather_df.columns = [np.array(['wind_speed',
+                                        'temperature',
                                         'pressure',
                                         'roughness_length',
-                                        'wind_speed',
                                         'wind_speed']),
                               np.array([10, 10, 0, 10, 50])]
         weather_df = weather_df.dropna(axis=1, how='all')
