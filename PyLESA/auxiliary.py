@@ -1,6 +1,6 @@
 """auxiliary modules
 
-contains class for auxiliaries which covers 
+contains class for auxiliaries which covers
 back up heaters
 """
 
