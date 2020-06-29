@@ -151,19 +151,17 @@ class HotWaterTank(object):
         Returns:
             float -- ambient temp surrounding tank degC
         """
-
-        if self.location == 'Outside ':
+        if self.location == 'Outside':
 
             w = weather.Weather(
                 air_temperature=self.air_temperature).hot_water_tank()
-            ambient_temp = w['air_temperature']
+            ambient_temp = w['air_temperature']['air_temperature'][timestep]
 
         elif self.location == 'Inside ':
             ambient_temp = 15.0
 
         else:
             print('Error in location definition')
-
         return ambient_temp
 
     def discharging_function(self, state, nodes_temp, flow_temp):
