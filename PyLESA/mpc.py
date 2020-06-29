@@ -403,8 +403,7 @@ class Scheduler(object):
                 next_nodes_temp = self.myHotWaterTank.new_nodes_temp(
                     state, prev_result['final_nodes_temp'], st[h], sdt, ft[h],
                     rt, TSc[h], TSd[h], hour + h)
-                final_nodes_temp = next_nodes_temp[
-                    self.myHotWaterTank.number_nodes - 1]
+                final_nodes_temp = next_nodes_temp[-1]
 
         # final_nodes_temp = [round(elem, 2) for elem in final_nodes_temp]
         # print prev_result['final_nodes_temp'], 'prev_result'

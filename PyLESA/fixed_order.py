@@ -335,8 +335,7 @@ class FixedOrder(object):
                 state, nodes_temp, source_temp, self.source_delta_t,
                 flow_temp, self.return_temp, thermal_output,
                 heat_demand, timestep)
-            final_nodes_temp = next_nodes_temp[
-                self.myHotWaterTank.number_nodes - 1]
+            final_nodes_temp = next_nodes_temp[- 1]
             # final_nodes_temp = [round(elem, 0) for elem in final_nodes_temp]
 
         results['TS']['final_nodes_temp'] = final_nodes_temp
@@ -462,8 +461,7 @@ class FixedOrder(object):
                         state, nodes_temp, source_temp, self.source_delta_t,
                         flow_temp, self.return_temp, thermal_output,
                         heat_demand, timestep)
-                    final_nodes_temp = next_nodes_temp[
-                        self.myHotWaterTank.number_nodes - 1]
+                    final_nodes_temp = next_nodes_temp[-1]
                     results['TS']['final_nodes_temp'] = final_nodes_temp
 
                 # set the auxiliary to meet the remaining demand
@@ -503,8 +501,7 @@ class FixedOrder(object):
                         state, nodes_temp, source_temp, self.source_delta_t,
                         flow_temp, self.return_temp, thermal_output,
                         heat_demand, timestep)
-                    final_nodes_temp = next_nodes_temp[
-                        self.myHotWaterTank.number_nodes - 1]
+                    final_nodes_temp = next_nodes_temp[-1]
                     results['TS']['final_nodes_temp'] = final_nodes_temp
 
         return results
@@ -625,8 +622,7 @@ class FixedOrder(object):
                 state, nodes_temp, source_temp, self.source_delta_t,
                 flow_temp, self.return_temp, thermal_output,
                 heat_demand, timestep)
-            final_nodes_temp = next_nodes_temp[
-                self.myHotWaterTank.number_nodes - 1]
+            final_nodes_temp = next_nodes_temp[-1]
 
         results['TS']['final_nodes_temp'] = final_nodes_temp
 
@@ -767,8 +763,7 @@ class FixedOrder(object):
                         state, nodes_temp, source_temp, self.source_delta_t,
                         flow_temp, self.return_temp, thermal_output,
                         heat_demand, timestep)
-                    final_nodes_temp = next_nodes_temp[
-                        self.myHotWaterTank.number_nodes - 1]
+                    final_nodes_temp = next_nodes_temp[-1]
                     results['TS']['final_nodes_temp'] = final_nodes_temp
 
                 # set the auxiliary to meet the remaining demand
@@ -808,8 +803,7 @@ class FixedOrder(object):
                         state, nodes_temp, source_temp, self.source_delta_t,
                         flow_temp, self.return_temp, thermal_output,
                         heat_demand, timestep)
-                    final_nodes_temp = next_nodes_temp[
-                        self.myHotWaterTank.number_nodes - 1]
+                    final_nodes_temp = next_nodes_temp[- 1]
                     results['TS']['final_nodes_temp'] = final_nodes_temp
 
         return results

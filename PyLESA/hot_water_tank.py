@@ -46,6 +46,15 @@ class HotWaterTank(object):
 
         # dic inputs
         self.dimensions = dimensions
+        # using new calc for dimensions
+        # assuming a ratio of height to width of 2.5
+        factor = 2.5
+        self.dimensions['width'] = 2 * (self.capacity / (factor * math.pi)) ** (1. / 3)
+        self.dimensions['height'] = 0.5 * factor * self.dimensions['width']
+        # assuming a ratio of width to insulation thickness
+        ins_divider = 8
+        self.dimensions['insulation_thickness'] = self.dimensions['width'] / ins_divider
+
         self.tank_openings = tank_openings
         self.correction_factors = correction_factors
 
@@ -91,7 +100,10 @@ class HotWaterTank(object):
         else:
             print('Error in choice of insulation')
 
-        return k
+        # units of k need to be adjusted from W to joules
+        # over the hour, and this requires
+        # minuts in hour * seconds in minute (60*60)
+        return k * 3600
 
     def specific_heat_water(self, temp):
         """cp of water
@@ -386,7 +398,7 @@ class HotWaterTank(object):
             insulated_connections_d * 0.001 *
             insulated_connections * 3.5 / 0.024)
 
-        loss = (
+        loss = 3600 * (
             tank_opening_loss +
             uninsulated_connections_loss +
             insulated_connections_loss)
@@ -424,8 +436,7 @@ class HotWaterTank(object):
                                          flow_temp,
                                          demand, temp_tank_top):
 
-        # mass discharged in every tank timestep, minutely
-
+        # mass discharged in every tank timestep
         ts_mass = ((self.DH_flow_post_mix(demand, flow_temp, return_temp) *
                    (flow_temp - return_temp) -
                     self.source_out_pre_mix(
@@ -465,6 +476,7 @@ class HotWaterTank(object):
             #     mass_ts = mass
         elif state == 'standby':
             mass_ts = 0
+
         return mass_ts
 
     def coefficient_A(self, state, node, nodes_temp, mass_flow,
@@ -576,9 +588,12 @@ class HotWaterTank(object):
                             thermal_output, demand, temp_tank_bottom,
                             temp_tank_top, timestep):
 
-        mass_flow = self.mass_flow_calc(
+        mass_flow1 = self.mass_flow_calc(
             state, flow_temp, return_temp, source_temp, source_delta_t,
             thermal_output, demand, temp_tank_bottom, temp_tank_top)
+        # errors may lead to slight overestimation of maximum mass flow
+        # this accounts for this and ensures not going over node mass
+        mass_flow = min(mass_flow1, self.calc_node_mass())
         # print mass_flow, 'mass_flow'
 
         c = []
@@ -607,11 +622,11 @@ class HotWaterTank(object):
         if self.capacity == 0:
             return nodes_temp
 
-        check = 0.0
-        for node in range(len(nodes_temp)):
-            check += nodes_temp[node]
-        if check == source_temp * len(nodes_temp) and state == 'charging':
-            return nodes_temp * len(nodes_temp)
+        # check = 0.0
+        # for node in range(len(nodes_temp)):
+        #     check += nodes_temp[node]
+        # if check == source_temp * len(nodes_temp) and state == 'charging':
+        #     return nodes_temp * len(nodes_temp)
 
         def model_temp(z, t, c):
             dzdt = []
@@ -651,14 +666,23 @@ class HotWaterTank(object):
 
             return dzdt
 
-        # number of time points
-        # limiting factor is volume of one node
-        # therefore minimum time points needed is number of nodes
-        t = self.number_nodes - 1
-
         # node indexes
         top = 0
         bottom = self.number_nodes - 1
+
+        # CHANGED FROM
+        # t = self.number_nodes - 1
+        # CHANGED TO
+        mass_flow_tot = self.mass_flow_calc(
+            state, flow_temp, return_temp,
+            source_temp, source_delta_t, thermal_output, demand,
+            nodes_temp[bottom], nodes_temp[top]) * 3600
+        # number of internal timesteps function of node mass and charging/dis mass
+        t_ = math.ceil((mass_flow_tot / self.calc_node_mass()))
+        # maximum internal timesteps is the number of nodes
+        t = min(self.number_nodes, t_)
+        # minimum internal timesteps is 1
+        t = max(t, 1)
 
         # initial condition of coefficients
         coefficients = []
@@ -673,7 +697,7 @@ class HotWaterTank(object):
             nodes_temp[bottom], nodes_temp[top], timestep)))
 
         node_temp_list = []
-        node_temp_list.append(nodes_temp)
+        # node_temp_list.append(nodes_temp)
 
         # solve ODE
         for i in range(1, t + 1):
@@ -697,7 +721,6 @@ class HotWaterTank(object):
             nodes_temp = z[1]
             nodes_temp = sorted(nodes_temp, reverse=True)
             node_temp_list.append(nodes_temp)
-        # print node_temp_list, 'ntl'
         return node_temp_list
 
     def coefficient_A_max(self, state, node, nodes_temp, source_temp,

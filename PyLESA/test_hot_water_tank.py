@@ -113,12 +113,12 @@ def validation():
     plt.show()
 
 
-validation()
+# validation()
 
 
 def test():
 
-    myInputs = inputs.Inputs('WWHC_ires.xlsx', 'hp_600_ts_50000')
+    myInputs = inputs.Inputs('WWHC_FOC_WM.xlsx', 'hp_1000_ts_400000')
     ts_inputs = myInputs.hot_water_tank()
     weather = myInputs.weather()
     demands = myInputs.demands()
@@ -133,9 +133,10 @@ def test():
         ts_inputs['correction_factors'],
         air_temperature=weather)
 
-    number_nodes = ts_inputs['number_nodes']
+    myHotWaterTank.number_nodes = 5
+    number_nodes = myHotWaterTank.number_nodes
 
-    timestep = 30
+    t = 24
     source_delta_t = demands['source_delta_t']
     return_temp = demands['return_temp_DH']
 
@@ -143,152 +144,49 @@ def test():
     flow_temp = demands['flow_temp_DH']
 
     # charging, discharging, standby
-    state = 'discharging'
+    state = 'standby'
 
     if state == 'charging':
-        nodes_temp = [40, 40, 40]
+        i_nodes_temp = [40] * number_nodes
         demand = 0
-        thermal_output = 20
+        thermal_output = 4000
     elif state == 'discharging':
-        nodes_temp = [70, 70, 20]
-        demand = 20
+        i_nodes_temp = [70] * number_nodes
+        demand = 5000
         thermal_output = 0
     elif state == 'standby':
-        nodes_temp = [90, 90, 90]
+        i_nodes_temp = [90] * number_nodes
         demand = 0
         thermal_output = 0
 
-    # discharge_function = myHotWaterTank.discharging_function(
-    #     state, nodes_temp, return_temp)
-    # charge_function = myHotWaterTank.charging_function(
-    #     state, nodes_temp, source_temp)
-
-    # coefficients = myHotWaterTank.set_of_coefficients(
-    #     state, nodes_temp, source_temp, return_temp,
-    #     mass_flow, timestep)
-
-    # for t in range(100):
-
-    #     node_temp_list = myHotWaterTank.new_nodes_temp(
-    #         state, nodes_temp, source_temp, source_delta_t,
-    #         flow_temp, return_temp, thermal_output, demand,
-    #         timestep)
-    #     nodes_temp = node_temp_list[number_nodes]
-    #     print nodes_temp
-
-    # max_capacity = np.empty(24)
-    # energy_available = []
-    # nodes_temp = []
-    # nodes_temp.append([40, 40, 40, 40, 40])
-    # soc = []
-    # max_charge = []
-    # state = 'charging'
-
-    # for timestep in range(24):
-
-    #     max_capacity[timestep] = myHotWaterTank.max_energy_in_out(
-    #         state,
-    #         [return_temp, return_temp, return_temp, return_temp, return_temp],
-    #         source_temp[timestep], flow_temp[timestep], return_temp, timestep)
-
-    #     thermal_output = 74
-    #     demand = 0
-
-    #     energy_available.append(myHotWaterTank.max_energy_in_out(
-    #         state, nodes_temp[timestep], source_temp[timestep],
-    #         flow_temp[timestep], return_temp, timestep))
-    #     print nodes_temp[timestep]
-    #     node_temp_list = myHotWaterTank.new_nodes_temp(
-    #         state,
-    #         nodes_temp[timestep],
-    #         source_temp[timestep], source_delta_t,
-    #         flow_temp[timestep], return_temp, thermal_output, demand,
-    #         timestep)
-    #     nodes_temp.append(node_temp_list[number_nodes - 1])
-    #     if timestep == 0:
-    #         soc.append(0)
-    #     else:
-    #         soc.append(soc[timestep - 1] + thermal_output)
-    #     max_charge.append(max_capacity[timestep] - soc[timestep])
-
-    # print energy_available, 'kWh'
-    # plt.plot(energy_available)
-    # plt.plot(max_capacity)
-    # plt.plot(soc)
-    # plt.plot(max_charge)
-    # plt.show()
-
-    max_discharge = np.empty(24)
-    energy_available = []
     nodes_temp = []
-    nodes_temp.append([40, 40, 40, 40, 40])
-    soc = []
-    init_soc = []
-    state = 'charging'
+    nodes_temp.append(i_nodes_temp)
 
-    for timestep in range(24):
-
-        max_discharge[timestep] = myHotWaterTank.max_energy_in_out(
-            'discharging',
-            [source_temp[timestep], source_temp[timestep],
-             source_temp[timestep],
-             source_temp[timestep], source_temp[timestep]],
-            source_temp[timestep], flow_temp[timestep], return_temp, timestep)
-
-        thermal_output = 70
-        demand = 0
+    for timestep in range(t):
 
         # available energy to discharge or charge
-        energy_available.append(myHotWaterTank.max_energy_in_out(
+        energy_available = myHotWaterTank.max_energy_in_out(
             state, nodes_temp[timestep], source_temp[timestep],
-            flow_temp[timestep], return_temp, timestep))
-        print nodes_temp[timestep]
+            flow_temp[timestep], return_temp, timestep)
+
+        if state == 'charging' and thermal_output >= energy_available:
+            thermal_output = energy_available
+        if state == 'discharging' and demand >= energy_available:
+            demand = energy_available
+
         # new temps after charging/discharging
         node_temp_list = myHotWaterTank.new_nodes_temp(
-            state,
-            nodes_temp[timestep],
-            source_temp[timestep], source_delta_t,
-            flow_temp[timestep], return_temp, thermal_output, demand,
-            timestep)
-        nodes_temp.append(node_temp_list[number_nodes - 1])
+            state, nodes_temp[timestep], source_temp[timestep], source_delta_t,
+            flow_temp[timestep], return_temp, thermal_output, demand, timestep)
+        nodes_temp.append(node_temp_list[-1])
 
-        # now calculate the soc as if it was energy
-        if timestep == 0:
-            # start it is full therefore it is maximum discharge
-            soc.append(max_discharge[timestep])
-        else:
-            soc.append(soc[timestep - 1] - demand)
-
-        avg_nodes_temp = sum(nodes_temp[timestep]) / len(nodes_temp[timestep])
-        if avg_nodes_temp <= return_temp:
-            soc_ratio = 0
-        elif avg_nodes_temp >= source_temp[timestep]:
-            soc_ratio = 1
-        else:
-            soc_ratio = (avg_nodes_temp - return_temp) / (source_temp[timestep] - return_temp)
-        # init_soc.append(soc_ratio * max_d[timestep])
-
-    print energy_available, 'kWh'
-    print soc, 'soc'
-    print init_soc, 'init_soc'
-    # plt.plot(energy_available)
-    plt.plot(max_discharge)
-    plt.plot(soc)
-    # plt.plot(init_soc)
+    plt.style.use('ggplot')
+    plt.rcParams.update({'font.size': 16})
+    plt.plot(nodes_temp)
+    plt.ylabel('Node temperature \n (degC)')
+    plt.title('Modelled node temperatures')
+    plt.xlabel('Hour timesteps')
     plt.show()
 
-    # plt.plot(range(60), node_temp_list[0], label='T1(t)')
-    # plt.plot(range(60), node_temp_list[1], label='T2(t)')
-    # plt.plot(range(60), node_temp_list[2], label='T3(t)')
 
-    # plt.ylabel('values')
-    # plt.xlabel('time')
-    # plt.legend(loc='best')
-    # plt.show()
-
-    # print discharge_function, 'discharge_function'
-    # print charge_function, 'charge_function'
-    # print coefficients, 'set of coefficients'
-
-
-# test()
+test()
