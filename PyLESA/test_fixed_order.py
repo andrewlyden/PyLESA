@@ -1,7 +1,6 @@
 import fixed_order
 
-first_hour = 0
-timesteps = 8760
-fixed_order.FixedOrder(
-    'north_whins_SH.xlsx', 'hp_5_ts_500').run_timesteps(
+first_hour = 4000
+timesteps = 100
+fixed_order.FixedOrder('electrical_storage.xlsx', 'hp_1000_ts_0').run_timesteps(
     first_hour, timesteps)

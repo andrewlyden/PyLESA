@@ -4,7 +4,7 @@ this script initialises other class objects
 which are used to calculate the means by
 which the supply, demand and storage operate
 
-the fixed order control contains a set order of operations 
+the fixed order control contains a set order of operations
 which are followed
 """
 
@@ -118,7 +118,8 @@ class FixedOrder(object):
                 nodes_temp_list.append(
                     self.myHotWaterTank.init_temps(self.return_temp))
                 nodes_temp = nodes_temp_list[0]
-                soc_list.append(self.myElectricalStorage.init_state())
+                soc_list.append(
+                    self.myElectricalStorage.init_state())
                 soc = soc_list[0]
             else:
                 nodes_temp = nodes_temp_list[timestep - first_hour]
@@ -163,39 +164,43 @@ class FixedOrder(object):
         # stop progress bar
         pbar.finish()
 
-        HPt = []
-        aux = []
-        final_nodes_temp = []
-        TSc = []
-        TSd = []
-        IC = []
-        surplus = []
-        hd = []
-        export = []
-        for i in range(timesteps):
-            HPt.append(results[i]['HP']['heat_total_output'])
-            aux.append(results[i]['aux']['demand'])
-            final_nodes_temp.append(results[i]['TS']['final_nodes_temp'])
-            TSc.append(results[i]['TS']['charging_total'])
-            TSd.append(results[i]['TS']['discharging_total'])
-            IC.append(results[i]['grid']['import_price'])
-            surplus.append(results[i]['grid']['surplus'])
-            hd.append(results[i]['heat_demand']['heat_demand'])
-            export.append(results[i]['grid']['total_export'])
+        # ES_to_demand = []
+        # ES_to_HP_to_demand = []
+        # RES_to_ES = []
+        # import_for_ES = []
+        # soc = []
 
-        # Plot solution
+        # # TSd = []
+        # IC = []
+        # surplus = []
+        # # hd = []
+        # export = []
+        # for i in range(timesteps):
+        #     ES_to_demand.append(-1 * results[i]['ES']['discharging_to_demand'])
+        #     ES_to_HP_to_demand.append(-1 * results[i]['ES']['discharging_to_HP'])
+        #     RES_to_ES.append(results[i]['ES']['charging_from_RES'])
+        #     import_for_ES.append(results[i]['ES']['charging_from_import'])
+        #     soc.append(results[i]['ES']['final_soc'])
+        #     # TSd.append(results[i]['TS']['discharging_total'])
+        #     IC.append(results[i]['grid']['import_price'])
+        #     surplus.append(results[i]['grid']['surplus'])
+        #     # hd.append(results[i]['heat_demand']['heat_demand'])
+        #     export.append(results[i]['grid']['total_export'])
+
+        # # Plot solution
         # time = range(first_hour, final_hour)
         # plt.figure()
         # plt.subplot(4, 1, 1)
-        # plt.plot(time, HPt, 'r', LineWidth=2)
-        # plt.plot(time, aux, 'y', LineWidth=2)
-        # plt.plot(time, hd, 'g', LineWidth=2)
-        # plt.ylabel('HPt, Aux and HD')
-        # plt.legend(['HPt', 'Aux', 'HD'], loc='best')
+        # plt.plot(time, ES_to_demand, 'r', LineWidth=2)
+        # plt.plot(time, ES_to_HP_to_demand, 'y', LineWidth=2)
+        # plt.plot(time, RES_to_ES, 'b', LineWidth=2)
+        # plt.plot(time, import_for_ES, 'g', LineWidth=2)
+        # plt.ylabel('ES charging/discharging')
+        # plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
         # plt.subplot(4, 1, 2)
-        # plt.plot(time, final_nodes_temp, 'b', LineWidth=2)
-        # plt.legend(['Node temperature'], loc='best')
-        # plt.ylabel('Node temperature')
+        # plt.plot(time, soc, 'r', LineWidth=2)
+        # plt.legend(['SOC'], loc='best')
+        # plt.ylabel('SOC')
         # plt.subplot(4, 1, 3)
         # plt.plot(time, IC, 'g', LineWidth=2)
         # plt.legend(['Import cost'], loc='best')
@@ -950,6 +955,7 @@ class FixedOrder(object):
                 checks['RES_left'] -= r['e']
             except:
                 checks['RES_left'] -= r
+
         if process in hp_usage_process:
             checks['hp_usage'] += r['h']
         if process in ts_discharge_process:
@@ -964,8 +970,7 @@ class FixedOrder(object):
                 r = -r
             elif process == 'ES to HP to demand':
                 r = -r['e']
-            checks['soc'] = self.myElectricalStorage.new_soc(
-                r, soc)
+            checks['soc'] += r
         if process in aux_process:
             checks['aux_left'] -= r
 
@@ -1075,6 +1080,7 @@ class FixedOrder(object):
               'discharging_total': 0.0,  #
               'discharging_to_demand': 0.0,  #
               'discharging_to_HP': 0.0,  #
+              'discharging_to_aux': 0.0,  #
               'charging_from_RES': 0.0,  #
               'charging_from_import': 0.0,  #
               'final_soc': 0.0  #
@@ -1312,7 +1318,7 @@ class FixedOrder(object):
         # CHARGE ELECTRIC BATTERY
 
         # charge battery
-        charge_battery = self.myElectricalStorage.charging(
+        charge_battery = self.myElectricalStorage.max_charging(
             RES_left, soc)
 
         return charge_battery

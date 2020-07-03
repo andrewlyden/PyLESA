@@ -66,6 +66,28 @@ class Scheduler(object):
         # heat pump performance over the year
         hp_performance = self.myHeatPump.performance()
 
+        # thermal storage max capacity in each timestep
+        max_capacity = np.zeros(total_timesteps)
+
+        # temp parameters
+        rt = self.return_temp
+        st = self.source_temp
+        ft = self.flow_temp
+
+        final_hour = first_hour + total_timesteps
+        if final_hour >= 8759 - horizon:
+            final_hour = 8759
+
+        for timestep in range(first_hour, final_hour):
+            t = timestep - first_hour
+            return_temp_nodes = []
+            for n in range(self.myHotWaterTank.number_nodes):
+                return_temp_nodes.append(rt)
+            # charging from return temp to source temp is max capacity
+            max_capacity[t] = self.myHotWaterTank.max_energy_in_out(
+                'charging', return_temp_nodes,
+                st[timestep], ft[timestep], rt, timestep)
+
         # create instance of Check class
         myCheck = tools.CheckFunctions(
             RES, self.elec_demand, self.heat_demand)
@@ -74,81 +96,81 @@ class Scheduler(object):
         match = elec_match['match']
         surplus = elec_match['surplus']
         deficit = elec_match['deficit']
-        RES_used_demand = elec_match['RES_used']
+        # RES_used_demand = elec_match['RES_used']
 
         # temp parameters
-        rt = self.return_temp
-        st = self.source_temp
-        ft = self.flow_temp
+        # rt = self.return_temp
+        # st = self.source_temp
+        # ft = self.flow_temp
 
-        heat_pump_renewable_demand = np.zeros(total_timesteps)
-        heat_pump_renewable_usage = np.zeros(total_timesteps)
-        _RES_used = np.zeros(total_timesteps)
-        hp_left = np.zeros(total_timesteps)
-        max_capacity = np.zeros(total_timesteps)
+        # heat_pump_renewable_demand = np.zeros(total_timesteps)
+        # heat_pump_renewable_usage = np.zeros(total_timesteps)
+        # _RES_used = np.zeros(total_timesteps)
+        # hp_left = np.zeros(total_timesteps)
+        # max_capacity = np.zeros(total_timesteps)
 
-        final_hour = first_hour + total_timesteps
-        if final_hour >= 8759 - horizon:
-            final_hour = 8759
+        # final_hour = first_hour + total_timesteps
+        # if final_hour >= 8759 - horizon:
+        #     final_hour = 8759
 
-        for timestep in range(first_hour, final_hour):
+        # for timestep in range(first_hour, final_hour):
 
-                t = timestep - first_hour
-                # USE HEAT PUMP WITH SURPLUS TO MEET HEAT DEMAND
-                # hpr - heat pump renewable
-                hpr = self.myHeatPump.thermal_output(
-                    surplus[timestep], hp_performance[timestep],
-                    self.heat_demand[timestep])
-                # thermal output from heat pump running on renewables
-                heat_pump_renewable_demand[t] = hpr['hp_demand']
-                # electrical usage of RES by heat pump running on renewables
-                heat_pump_renewable_usage[t] = hpr['hp_elec']
-                _RES_used[t] = (
-                    surplus[timestep] - heat_pump_renewable_usage[t])
-                # STILL RES SURPLUS?
+        #         t = timestep - first_hour
+        #         # USE HEAT PUMP WITH SURPLUS TO MEET HEAT DEMAND
+        #         # hpr - heat pump renewable
+        #         hpr = self.myHeatPump.thermal_output(
+        #             surplus[timestep], hp_performance[timestep],
+        #             self.heat_demand[timestep])
+        #         # thermal output from heat pump running on renewables
+        #         heat_pump_renewable_demand[t] = hpr['hp_demand']
+        #         # electrical usage of RES by heat pump running on renewables
+        #         heat_pump_renewable_usage[t] = hpr['hp_elec']
+        #         _RES_used[t] = (
+        #             surplus[timestep] - heat_pump_renewable_usage[t])
+        #         # STILL RES SURPLUS?
 
-                # calculates the RES used so far
-                # only the heat pump so far
-                RES_used1 = heat_pump_renewable_usage[t]
-                # checks if there is a surplus
-                surplus_check = myCheck.surplus_check(
-                    surplus[timestep], RES_used1)
-                # if there is surplus
-                if surplus_check is True:
-                    # CHARGE THERMAL STORAGE WITH HEAT PUMP DRIVEN BY SURPLUS
+        #         # calculates the RES used so far
+        #         # only the heat pump so far
+        #         RES_used1 = heat_pump_renewable_usage[t]
+        #         # checks if there is a surplus
+        #         surplus_check = myCheck.surplus_check(
+        #             surplus[timestep], RES_used1)
+        #         # if there is surplus
+        #         if surplus_check is True:
+        #             # CHARGE THERMAL STORAGE WITH HEAT PUMP DRIVEN BY SURPLUS
 
-                    # calculate the RES leftover
-                    RES_left1 = surplus[timestep] - RES_used1
-                    duty = hp_performance[timestep]['duty']
-                    # capacity of heat pump leftover
-                    hp_cap_left = duty - heat_pump_renewable_demand[t]
-                    # max heat from heat pump running surplus
-                    hp_max_RES = hp_performance[timestep]['cop'] * RES_left1
-                    hp_left[t] = min(hp_cap_left, hp_max_RES)
-                    if self.myHeatPump.capacity == 0:
-                        hp_left[t] = 0
+        #             # calculate the RES leftover
+        #             RES_left1 = surplus[timestep] - RES_used1
+        #             duty = hp_performance[timestep]['duty']
+        #             # capacity of heat pump leftover
+        #             hp_cap_left = duty - heat_pump_renewable_demand[t]
+        #             # max heat from heat pump running surplus
+        #             hp_max_RES = hp_performance[timestep]['cop'] * RES_left1
+        #             hp_left[t] = min(hp_cap_left, hp_max_RES)
+        #             if self.myHeatPump.capacity == 0:
+        #                 hp_left[t] = 0
 
-                return_temp_nodes = []
-                for n in range(self.myHotWaterTank.number_nodes):
-                    return_temp_nodes.append(rt)
-                # charging from return temp to source temp is max capacity
-                max_capacity[t] = self.myHotWaterTank.max_energy_in_out(
-                    'charging', return_temp_nodes,
-                    st[timestep], ft[timestep], rt, timestep)
+        #         return_temp_nodes = []
+        #         for n in range(self.myHotWaterTank.number_nodes):
+        #             return_temp_nodes.append(rt)
+        #         # charging from return temp to source temp is max capacity
+        #         max_capacity[t] = self.myHotWaterTank.max_energy_in_out(
+        #             'charging', return_temp_nodes,
+        #             st[timestep], ft[timestep], rt, timestep)
 
         pre_calc = {
             'hp_performance': hp_performance,
-            'heat_pump_renewable_demand': heat_pump_renewable_demand,
-            'hp_left': hp_left,
-            '_RES_used': _RES_used,
+            # 'heat_pump_renewable_demand': heat_pump_renewable_demand,
+            # 'hp_left': hp_left,
+            # '_RES_used': _RES_used,
             'max_capacity': max_capacity,
             'surplus': surplus,
             'deficit': deficit,
             'match': match,
             'generation_total': RES,
             'wind': wind,
-            'PV': PV,
-            'RES_used_demand': RES_used_demand}
+            'PV': PV}
+            # 'RES_used_demand': RES_used_demand}
 
         return pre_calc
 
@@ -162,13 +184,9 @@ class Scheduler(object):
         generation_total = pre_calc['generation_total']
         wind = pre_calc['wind']
         PV = pre_calc['PV']
-        RES_used_demand = pre_calc['RES_used_demand']
 
         # over the first hour to final hour plus horizon
         # indexed from 0 to final hour plus horizon
-        heat_pump_renewable_demand = pre_calc['heat_pump_renewable_demand']
-        hp_left = pre_calc['hp_left']
-        _RES_used = pre_calc['_RES_used']
         max_capacity = pre_calc['max_capacity']
 
         # temp parameters
@@ -191,11 +209,14 @@ class Scheduler(object):
 
         # elec demand and res used for elec demand
         # renewable used
-        RES_used = m.Param(value=list(_RES_used[t1:t2]))
+        RES = m.Param(value=list(generation_total[hour:final_hour]))
+        RES_ed = m.Var(value=prev_result['RES_ed'], lb=0)
         # elec demand
         ed = m.Param(value=list(self.elec_demand[hour:final_hour].values))
-        surplus = m.Param(value=surplus[hour:final_hour].values)
+        # surplus = m.Param(value=surplus[hour:final_hour].values)
         export = m.Var(value=prev_result['export'], lb=0)
+        # import straight to electrical demand
+        imp_ed = m.Var(value=prev_result['imp_ed'], lb=0)
 
         # heat demand
         hd = m.Param(value=list(self.heat_demand[hour:final_hour].values))
@@ -210,6 +231,8 @@ class Scheduler(object):
         HPtid = m.Var(value=prev_result['HPtid'], lb=0)
         # heat pump output from imports to storage
         HPtis = m.Var(value=prev_result['HPtis'], lb=0)
+        # heat pump output from ES to demand
+        HPtesd = m.Var(value=prev_result['HPtis'], lb=0)
         # performance of heat pump parameters
         cop = []
         duty = []
@@ -236,7 +259,7 @@ class Scheduler(object):
         # heat pump total output
         HPt = m.Intermediate(HP_status * HPt_var)
 
-        # storage parameters
+        # thermal storage parameters
         # max capacity
         max_cap = m.Param(value=list(max_capacity[t1:t2]))
         # initial state of charge
@@ -251,8 +274,29 @@ class Scheduler(object):
         # soc = m.Intermediate(init_soc + TSc - TSd)
         soc = m.Var(value=init_soc, lb=0)
         max_charge = m.Intermediate(max_cap - soc)
-        # loss = m.Intermediate(0.05 * soc)
-        loss = m.Intermediate(0.0)
+        loss = m.Intermediate(0.01 * soc)
+        # loss = m.Intermediate(0.0)
+
+        # electrical storage parameters
+        # max capacity
+        max_cap_ES = m.Const(self.myElectricalStorage.capacity)
+        # print(max_cap_ES.value)
+        # print(prev_result['soc_ES'])
+        max_charge_ES = m.Const(self.myElectricalStorage.charge_max)
+        max_discharge_ES = m.Const(self.myElectricalStorage.discharge_max)
+        charge_eff = m.Const(self.myElectricalStorage.charge_eff)
+        discharge_eff = m.Const(self.myElectricalStorage.discharge_eff)
+        # for clarity max discharge is simply the soc
+        # storage charge/discharge
+        ESc = m.Var(value=prev_result['ESc'], lb=0)
+        ESc_res = m.Var(value=prev_result['ESc_res'], lb=0)
+        ESc_imp = m.Var(value=prev_result['ESc_imp'], lb=0)
+        ESd = m.Var(value=prev_result['ESd'], lb=0)
+        ESd_hp = m.Var(value=prev_result['ESd_hp'], lb=0)
+        ESd_aux = m.Var(value=prev_result['ESd_aux'], lb=0)
+        ESd_ed = m.Var(value=prev_result['ESd_ed'], lb=0)
+        soc_ES = m.Var(value=prev_result['soc_ES'], lb=0)
+        loss_ES = m.Intermediate(self.myElectricalStorage.self_discharge * soc_ES)
 
         # aux parameters
         # back-up electrical heater
@@ -283,24 +327,35 @@ class Scheduler(object):
         if self.myAux.fuel == 'Electric':
             # equalities
             m.Equations(
-                [hd == HPtrd + HPtid + aux_d + aux_rd + TSd,
+                [soc_ES.dt() == ESc * charge_eff - ESd - loss_ES,
+                 ESd == ESd_ed + ESd_hp + ESd_aux,
+                 ESc == ESc_res + ESc_imp,
+                 ed == RES_ed + imp_ed + ESd_ed * discharge_eff,
+                 hd == HPtrd + HPtid + HPtesd + aux_d + aux_rd + ESd_aux * discharge_eff + TSd,
                  soc.dt() == TSc - TSd - loss,
-                 HP_status * HPt_var == HPtrs + HPtrd + HPtid + HPtis,
-                 aux == aux_d + aux_s + aux_rd + aux_rs,
+                 HPtesd == ESd_hp * cop * discharge_eff,
+                 HP_status * HPt_var == HPtrs + HPtrd + HPtid + HPtis + HPtesd,
+                 aux == aux_d + aux_s + aux_rd + aux_rs + ESd_aux,
                  TSc == HPtrs + HPtis + aux_rs + aux_s,
-                 surplus == (HPtrs + HPtrd) / cop + aux_rd + aux_rs + export])
+                 RES == RES_ed + (HPtrs + HPtrd) / cop + ESc_res + aux_rd + aux_rs + export
+                 ])
         # other auxiliary sources can't use the RES
         else:
             # equalities
             m.Equations(
                 # heat demand must be met,
                 # but can be exceeded if needed to store more
-                [hd == HPtrd + HPtid + aux_d + TSd,
+                [soc_ES.dt() == ESc * charge_eff - ESd - loss_ES,
+                 ESd == ESd_ed,
+                 ESc == ESc_res + ESc_imp,
+                 ed == RES_ed + imp_ed + ESd_ed * discharge_eff,
+                 hd == HPtrd + HPtid + aux_d + TSd,
                  soc.dt() == TSc - TSd - loss,
                  HP_status * HPt_var == HPtrs + HPtrd + HPtid + HPtis,
                  aux == aux_d + aux_s,
                  TSc == HPtrs + HPtis + aux_s,
-                 surplus == (HPtrs + HPtrd) / cop + export])
+                 RES == RES_ed + (HPtrs + HPtrd) / cop + ESc_res + export
+                 ])
 
         # inequalities
         m.Equations(
@@ -309,15 +364,20 @@ class Scheduler(object):
              soc <= max_cap,
              TSc <= max_charge,
              TSd <= soc,
+             soc_ES <= max_cap_ES,
+             ESc <= max_charge_ES * charge_eff,
+             ESd <= max_discharge_ES,
+             ESd <= soc_ES,
              aux <= aux_cap])
 
         # self.export_cost = 1
         # objective
+        # last term is to disadvantage charging e store with res
         m.Obj(IC / 1000 *
-              ((HPt - HPtrd - HPtrs) / cop +
-               ed - RES_used) +
-              (aux - aux_rs - aux_rd) * aux_cost / 1000 -
-              export * self.export_cost / 1000)
+              ((HPt - HPtrd - HPtesd - HPtrs) / cop +
+               imp_ed + ESc_imp) +
+              (aux - aux_rs - aux_rd - ESd_aux) * aux_cost / 1000 -
+              export * self.export_cost / 1000 + 0.00001 * ESc_res)
 
         m.options.IMODE = 6  # MPC mode
         m.options.SOLVER = 1  # APOPT for solving MINLP problems
@@ -415,16 +475,16 @@ class Scheduler(object):
 
         # elec demand results
         results['elec_demand']['elec_demand'] = self.elec_demand[timestep]
-        results['elec_demand']['RES'] = RES_used_demand[timestep]
-        results['elec_demand']['import'] = (
-            results['elec_demand']['elec_demand'] -
-            results['elec_demand']['RES'])
+        results['elec_demand']['RES'] = RES_ed[h]
+        results['elec_demand']['import'] = imp_ed[h]
+        results['elec_demand']['ES'] = (
+            ESd_ed[h] * self.myElectricalStorage.discharge_eff)
 
         # RES results
         results['RES']['generation_total'] = generation_total[timestep]
         results['RES']['wind'] = wind[timestep]
         results['RES']['PV'] = PV[timestep]
-        results['RES']['elec_demand'] = RES_used_demand[timestep]
+        results['RES']['elec_demand'] = RES_ed[h]
         results['RES']['HP'] = (
             (HPtrd[h] + HPtrs[h]) /
             hp_performance[timestep]['cop'])
@@ -437,6 +497,7 @@ class Scheduler(object):
         results['HP']['cop'] = hp_performance[timestep]['cop']
         results['HP']['duty'] = hp_performance[timestep]['duty']
         results['HP']['heat_total_output'] = HPt[h]
+        results['HP']['heat_from_ES_to_demand'] = HPtesd[h]
         results['HP']['heat_to_heat_demand'] = min(
             results['HP']['heat_total_output'],
             hd[h])
@@ -449,9 +510,13 @@ class Scheduler(object):
             results['HP']['cop'])
         results['HP']['elec_RES_usage'] = (
             results['RES']['HP'])
+        results['HP']['elec_from_ES_to_demand'] = (
+            results['HP']['heat_from_ES_to_demand'] /
+            results['HP']['cop'])
         results['HP']['elec_import_usage'] = (
             results['HP']['elec_total_usage'] -
-            results['HP']['elec_RES_usage'])
+            results['HP']['elec_RES_usage'] -
+            results['HP']['elec_from_ES_to_demand'])
 
         # heat demand results
         results['heat_demand']['TS'] = TSd[h]
@@ -473,6 +538,25 @@ class Scheduler(object):
             results['TS']['HP_to_TS'])
         results['TS']['final_nodes_temp'] = final_nodes_temp
 
+        # # ES results
+        results['ES']['charging_from_RES'] = ESc_res[h]
+        results['ES']['charging_from_import'] = ESc_imp[h]
+        results['ES']['charging_total'] = (
+            results['ES']['charging_from_RES'] +
+            results['ES']['charging_from_import'])
+        results['ES']['discharging_to_demand'] = (
+            ESd_ed[h] * self.myElectricalStorage.discharge_eff)
+        results['ES']['discharging_to_HP'] = ESd_hp[h]
+        results['ES']['discharging_to_aux'] = ESd_aux[h]
+        results['ES']['discharging_total'] = (
+            results['ES']['discharging_to_demand'] +
+            results['ES']['discharging_to_HP'] +
+            results['ES']['discharging_to_aux'])
+        # update state of charge
+        # new soc
+        final_soc = soc_ES[h]
+        results['ES']['final_soc'] = final_soc
+
         # AUX results
         results['aux']['demand'] = aux[h]
         results['aux']['usage'] = self.myAux.fuel_usage(
@@ -491,6 +575,8 @@ class Scheduler(object):
             results['elec_demand']['import'])
         results['grid']['import_for_heat_pump_total'] = (
             results['HP']['elec_import_usage'])
+        results['grid']['import_for_ES'] = (
+            results['ES']['charging_from_import'])
         results['grid']['total_export'] = results['RES']['export']
         if self.myAux.fuel == 'Electric':
             results['grid']['total_import'] = (
@@ -518,20 +604,26 @@ class Scheduler(object):
         results['grid']['cashflow'] = (
             results['grid']['export_income'] -
             results['grid']['import_costs'])
-        results['grid']['surplus'] = surplus[h]
+        results['grid']['surplus'] = surplus[timestep]
         results['grid']['deficit'] = deficit[timestep]
         results['grid']['match'] = match[timestep]
 
         next_results = {
             'HPt': HPt[h], 'HPtrs': HPtrs[h],
             'HPtrd': HPtrd[h], 'HPtid': HPtid[h],
-            'HPtis': HPtis[h], 'HP_status': HP_status[h],
+            'HPtis': HPtis[h], 'HPtesd': HPtesd[h], 'HP_status': HP_status[h],
             'HPt_var': HPt_var[h], 'aux': aux[h],
             'aux_rd': aux_rd[h], 'aux_rs': aux_rs[h],
             'aux_d': aux_d[h], 'aux_s': aux_s[h],
             'TSc': TSc[h], 'TSd': TSd[h],
             'final_nodes_temp': final_nodes_temp, 'state': state,
-            'import_cost': IC[h], 'export': export[h]}
+            'import_cost': IC[h], 'export': export[h],
+            'soc_ES': soc_ES[h],
+            'ESc': ESc[h], 'ESc_imp': ESc_imp[h], 'ESc_res': ESc_res[h],
+            'ESd': ESd[h], 'ESd_ed': ESd_ed[h], 'ESd_hp': ESd_hp[h],
+            'ESd_aux': ESd_aux[h],
+            'imp_ed': imp_ed[h], 'RES_ed': RES_ed[h]}
+
         # print results
 
         # print hd.value, 'hd'
@@ -611,7 +703,7 @@ class Scheduler(object):
                 duty = hp_performance[first_hour]['duty']
                 # max_charge = pre_calc['max_capacity'][0]
                 hd = self.heat_demand[first_hour]
-                if duty > hd:
+                if duty >= hd:
                     # TSc = min(leftover, max_charge)
                     HPt = hd
                     aux = 0
@@ -625,6 +717,7 @@ class Scheduler(object):
 
                 init_temps = self.myHotWaterTank.init_temps(
                     self.return_temp)
+                ES_init = self.myElectricalStorage.init_state()
                 # final_nodes_temp = self.myHotWaterTank.new_nodes_temp(
                 #     state, init_temps, self.source_temp[first_hour],
                 #     self.source_delta_t, self.flow_temp[first_hour],
@@ -634,16 +727,22 @@ class Scheduler(object):
                 prev_result = {
                     'HPt': 0, 'HPtrs': 0,
                     'HPtrd': 0, 'HPtid': 0,
-                    'HPtis': 0, 'HP_status': 0,
+                    'HPtis': 0, 'HPtesd': 0., 'HP_status': 0,
                     'HPt_var': 0, 'aux': 0,
                     'aux_rd': 0, 'aux_rs': 0,
                     'aux_d': 0, 'aux_s': 0,
                     'TSc': 0, 'TSd': 0,
                     'final_nodes_temp': init_temps, 'state': 'standby',
                     'import_cost': self.import_cost[first_hour],
-                    'export': self.export_cost}
+                    'export': self.export_cost,
+                    'soc_ES': ES_init,
+                    'ESc': 0., 'ESc_imp': 0., 'ESc_res': 0.,
+                    'ESd': 0., 'ESd_ed': 0., 'ESd_hp': 0.,
+                    'ESd_aux': 0.,
+                    'imp_ed': 0., 'RES_ed': 0.}
                 res = self.set_of_results()
                 res['TS']['final_nodes_temp'] = init_temps
+                res['ES']['final_soc'] = ES_init
                 res['HP']['heat_total_output'] = HPt
                 res['aux']['demand'] = aux
                 res['grid']['import_price'] = self.import_cost[first_hour]
@@ -680,14 +779,19 @@ class Scheduler(object):
                     prev_result = {
                         'HPt': 0, 'HPtrs': 0,
                         'HPtrd': 0, 'HPtid': 0,
-                        'HPtis': 0, 'HP_status': 0,
+                        'HPtis': 0, 'HPtesd': 0, 'HP_status': 0,
                         'HPt_var': 0, 'aux': 0,
                         'aux_rd': 0, 'aux_rs': 0,
                         'aux_d': 0, 'aux_s': 0,
                         'TSc': 0, 'TSd': 0,
                         'final_nodes_temp': init_temps, 'state': 'standby',
                         'import_cost': self.import_cost[first_hour],
-                        'export': self.export_cost}
+                        'export': self.export_cost,
+                        'soc_ES': ES_init,
+                        'ESc': 0., 'ESc_imp': 0., 'ESc_res': 0.,
+                        'ESd': 0., 'ESd_ed': 0., 'ESd_hp': 0.,
+                        'ESd_aux': 0.,
+                        'imp_ed': 0., 'RES_ed': 0.}
                     r = self.solve(
                         pre_calc, hour, first_hour, final_horizon_hour,
                         prev_result)
@@ -864,6 +968,7 @@ class Scheduler(object):
               'discharging_total': 0.0,  #
               'discharging_to_demand': 0.0,  #
               'discharging_to_HP': 0.0,  #
+              'discharging_to_aux': 0.0,  #
               'charging_from_RES': 0.0,  #
               'charging_from_import': 0.0,  #
               'final_soc': 0.0  #

@@ -38,19 +38,23 @@ class ElectricalStorage(object):
         i_s = self.initial_state * self.capacity
         return i_s
 
-    def max_charging(self, match):
+    def max_charging(self, match, soc):
         """maximum electrical storage charging
 
         Arguments:
             match {float} -- difference between renewable generation and demand
+            soc {float} -- state of charge at start of timestep
 
         Returns:
             float -- maximum charge given excess renewable generation
-                     does not account for available capacity hence maximum
+                     and accounts for available capacity
 
         """
+
+        max_change_soc = self.capacity - soc
+
         # max possible charge
-        max_p_charge = match * self.charge_eff
+        max_p_charge = match
 
         if max_p_charge >= 0 and max_p_charge <= self.charge_max:
             max_charge = max_p_charge
@@ -61,13 +65,14 @@ class ElectricalStorage(object):
         elif max_p_charge <= 0:
             max_charge = 0.0
 
-        return max_charge
+        return min(max_charge, max_change_soc)
 
-    def max_discharging(self, match):
+    def max_discharging(self, match, soc):
         """maximum electrical storage discharging
 
         Arguments:
             match {float} -- difference between renewable generation and demand
+            soc {float} -- state of charge at start of timestep
 
         Returns:
             float -- maximum discharge given excess renewable generation
@@ -85,7 +90,7 @@ class ElectricalStorage(object):
         elif max_p_dis >= 0:
             discharge = 0.0
 
-        return discharge
+        return min(discharge, soc)
 
     def self_loss(self, soc):
         """calculates self discharge in timestep
@@ -114,10 +119,11 @@ class ElectricalStorage(object):
         """
 
         # max new state of charge without considering capacity
-        max_new_soc = (soc +
-                       self.max_charging(match) +
-                       self.max_discharging(match) -
-                       self.self_loss(soc))
+        max_new_soc = (
+            soc +
+            self.max_charging(match, soc) +
+            self.max_discharging(match, soc) -
+            self.self_loss(soc))
 
         # new soc considering capacity
         if max_new_soc >= self.capacity:
@@ -141,12 +147,11 @@ class ElectricalStorage(object):
         Returns:
             float -- charging after losses
         """
-
-        if match >= 0:
-            charging = self.new_soc(match, soc) - soc
-
-        elif match < 0:
-            charging = 0
+        max_charging = self.new_soc(match, soc) - soc
+        if max_charging <= 0:
+            return match
+        else:
+            charging = max_charging
 
         return charging
 
@@ -177,12 +182,12 @@ class ElectricalStorage(object):
 
         Returns:
             float -- maximum charge possible
-        """    
+        """
 
         charging = self.capacity - soc
         losses = self.self_loss(soc) + charging * self.charge_eff
         total_charging = charging + losses
-        return total_charging
+        return min(total_charging, self.charge_max)
 
     def total_losses(self, match, soc):
         """total losses in timestep

@@ -61,6 +61,7 @@ def run_plots(name, subname):
             myPlots.elec_demand_and_RES()
             myPlots.HP_and_heat_demand()
             myPlots.TS()
+            myPlots.ES()
             myPlots.grid()
             if period == 'Year':
                 myPlots.RES_bar()
@@ -71,6 +72,7 @@ def run_plots(name, subname):
         myPlots.elec_demand_and_RES()
         myPlots.HP_and_heat_demand()
         myPlots.TS()
+        myPlots.ES()
         myPlots.grid()
         myPlots.RES_bar()
 
@@ -318,6 +320,7 @@ class Plot(object):
 
         elec_total_usage = []
         elec_RES_usage = []
+        elec_ES_usage = []
         elec_import_usage = []
 
         cop = []
@@ -341,6 +344,8 @@ class Plot(object):
                 results[i]['HP']['elec_total_usage'])
             elec_RES_usage.append(
                 results[i]['HP']['elec_RES_usage'])
+            elec_ES_usage.append(
+                results[i]['HP']['elec_from_ES_to_demand'])
             elec_import_usage.append(
                 results[i]['HP']['elec_import_usage'])
             cop.append(
@@ -381,9 +386,10 @@ class Plot(object):
         plt.stackplot(
             time,
             elec_RES_usage[first_hour:final_hour],
-            elec_import_usage[first_hour:final_hour])
+            elec_import_usage[first_hour:final_hour],
+            elec_ES_usage[first_hour:final_hour])
         plt.ylabel('Energy (kWh)')
-        plt.legend(['RES usage', 'Import'], loc='best')
+        plt.legend(['RES usage', 'Import', 'ES'], loc='best')
         plt.title('Heat pump electrical usage')
 
         plt.xlabel('Hour of the year')
@@ -469,6 +475,75 @@ class Plot(object):
         for x in range(len(final_nodes_temp[first_hour])):
             leg.append(str(x + 1))
         plt.legend(leg, loc='best')
+
+        plt.xlabel('Hour of the year')
+        plt.tight_layout()
+
+        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def ES(self):
+        # points to where the pdf will be saved and its name
+        fileout = os.path.join(self.folder_path, 'electrical_storage.png')
+
+        results = self.results
+        timesteps = self.timesteps
+        first_hour = self.first_hour
+        final_hour = first_hour + timesteps
+
+        ES_to_demand = []
+        ES_to_HP_to_demand = []
+        RES_to_ES = []
+        import_for_ES = []
+        soc = []
+        IC = []
+        surplus = []
+        export = []
+        # dem = []
+
+        for i in range(timesteps):
+            ES_to_demand.append(-1 * results[i]['ES']['discharging_to_demand'])
+            ES_to_HP_to_demand.append(-1 * results[i]['ES']['discharging_to_HP'])
+            RES_to_ES.append(results[i]['ES']['charging_from_RES'])
+            import_for_ES.append(results[i]['ES']['charging_from_import'])
+            soc.append(results[i]['ES']['final_soc'])
+            IC.append(results[i]['grid']['import_price'])
+            surplus.append(results[i]['grid']['surplus'])
+            export.append(results[i]['grid']['total_export'])
+            # dem.append(results[i]['elec_demand']['elec_demand'])
+
+        pt = self.period_timesteps()
+        first_hour = pt['first_hour']
+        timesteps = pt['timesteps']
+        final_hour = first_hour + timesteps
+
+        # Plot solution
+        time = range(first_hour, final_hour)
+        plt.figure()
+        plt.subplot(4, 1, 1)
+        plt.title('Electrical Storage')
+        plt.plot(time, ES_to_demand[first_hour:final_hour], 'r', LineWidth=1)
+        plt.plot(time, ES_to_HP_to_demand[first_hour:final_hour], 'y', LineWidth=1)
+        plt.plot(time, RES_to_ES[first_hour:final_hour], 'b', LineWidth=1)
+        plt.plot(time, import_for_ES[first_hour:final_hour], 'g', LineWidth=1)
+        plt.ylabel('ES c/d')
+        plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
+
+        plt.subplot(4, 1, 2)
+        plt.plot(time, soc[first_hour:final_hour], 'r', LineWidth=1)
+        # plt.plot(time, dem[first_hour:final_hour], 'g', LineWidth=1)
+        plt.ylabel('SOC')
+        plt.legend(['SOC'], loc='best')
+
+        plt.subplot(4, 1, 3)
+        plt.plot(time, IC[first_hour:final_hour], 'g', LineWidth=1)
+        plt.ylabel('Import cost')
+
+        plt.subplot(4, 1, 4)
+        plt.plot(time, surplus[first_hour:final_hour], 'm', LineWidth=1)
+        plt.plot(time, export[first_hour:final_hour], 'b', LineWidth=1)
+        plt.legend(['surplus', 'export'], loc='best')
+        plt.ylabel('Surplus, and export')
 
         plt.xlabel('Hour of the year')
         plt.tight_layout()

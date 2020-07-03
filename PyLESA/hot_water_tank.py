@@ -116,7 +116,7 @@ class HotWaterTank(object):
         """
         # input temp must be between 0 and 100 deg
 
-        if isinstance(temp, (int, float)):
+        if isinstance(temp, (int, float)) and temp > 0.:
 
             df = self.cp_spec
             T = round(float(temp), -1)
@@ -620,11 +620,11 @@ class HotWaterTank(object):
         if self.capacity == 0:
             return nodes_temp
 
-        # check = 0.0
-        # for node in range(len(nodes_temp)):
-        #     check += nodes_temp[node]
-        # if check == source_temp * len(nodes_temp) and state == 'charging':
-        #     return nodes_temp * len(nodes_temp)
+        check = 0.0
+        for node in range(len(nodes_temp)):
+            check += nodes_temp[node]
+        if check == source_temp * len(nodes_temp) and state == 'charging':
+            return nodes_temp * len(nodes_temp)
 
         def model_temp(z, t, c):
             dzdt = []
@@ -858,8 +858,8 @@ class HotWaterTank(object):
                           flow_temp, return_temp, timestep):
 
         # for node in range(len(nodes_temp)):
-            # if nodes_temp[node] > source_temp:
-                # nodes_temp[node] = source_temp
+        #     if nodes_temp[node] > source_temp:
+        #         nodes_temp[node] = source_temp
 
         nodes_temp_sum = 0.0
         for node in range(len(nodes_temp)):

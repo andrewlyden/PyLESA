@@ -144,7 +144,7 @@ def test():
     flow_temp = demands['flow_temp_DH']
 
     # charging, discharging, standby
-    state = 'standby'
+    state = 'discharging'
 
     if state == 'charging':
         i_nodes_temp = [40] * number_nodes
