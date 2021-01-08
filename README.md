@@ -15,7 +15,7 @@ PyLESA is compatible with Python 3.7.6.
 3.	Input the relevant input data from steps 1 and 2 on the local energy system into the input Excel workbook.
 4.	Input the increments and ranges to be modelled within the required parametric design into the input Excel workbook.
 5.	Run PyLESA for the specified analysis.
-  5.1.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, i.e. “…/PyLESA/PyLESA”.
-  5.2.	Enter “python run.py”.
-  5.3.	When prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
-6.	Analyse the outputs saved in the “outputs” folder, particularly the KPIs, to inform the specified analysis.
+6.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, i.e. “…/PyLESA/PyLESA”.
+7.	Enter “python run.py”.
+8.	When prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
+9.	Analyse the outputs saved in the “outputs” folder, particularly the KPIs, to inform the specified analysis.
