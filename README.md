@@ -14,4 +14,4 @@ PyLESA is compatible with Python 3.7.6.
 2.  Define and gather data on the local energy system to be modelled including resources, demands, supply, storage, grid connection, and control strategy. Input these using one of the template Excel Workbooks from the Inputs folder.
 3.	Optionally run the demand and resource assessment methods to generate hourly or sub-hourly profiles depending on available data. Input generated profiles, along with the increments and ranges to be modelled within the required parametric design, into the Excel Workbook.
 4.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, i.e. “…/PyLESA/PyLESA”, enter “python run.py” and when prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
-5.	Open the Outputs folder to view the outputs saved to inform the specified analysis.
+5.	After the run is complete, open the Outputs folder to view the outputs saved to inform the specified analysis.
