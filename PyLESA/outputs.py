@@ -1689,7 +1689,7 @@ class ThreeDPlots(object):
         ax.yaxis.labelpad = 15
         ax.zaxis.labelpad = 15
         # plt.show()
-        ax.invert_yaxis()
+        # ax.invert_yaxis()
 
         plt.tight_layout()
 
@@ -1942,7 +1942,7 @@ class ThreeDPlots(object):
         ax.xaxis.labelpad = 15
         ax.yaxis.labelpad = 15
         ax.zaxis.labelpad = 15
-        ax.invert_yaxis()
+        # ax.invert_yaxis()
         # plt.show()
         plt.tight_layout()
 
@@ -1979,7 +1979,7 @@ class ThreeDPlots(object):
         ax.xaxis.labelpad = 15
         ax.yaxis.labelpad = 15
         ax.zaxis.labelpad = 15
-        ax.invert_yaxis()
+        # ax.invert_yaxis()
         # plt.show()
         plt.tight_layout()
 

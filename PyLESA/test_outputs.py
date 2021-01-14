@@ -4,7 +4,7 @@ import inputs
 
 def run_kpis():
 
-    name = 'WWHC_FOC_WM.xlsx'
+    name = 'WWHC_MPC_WM.xlsx'
     outputs.run_KPIs(name)
 
 
