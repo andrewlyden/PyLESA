@@ -6,11 +6,9 @@ PyLESA is an open source tool capable of modelling local energy systems containi
 
 This tool was developed as part of a PhD, "Modelling and Design of Local Energy Systems Incorporating Heat Pumps, Thermal Storage, Future  Tariffs, and Model Predictive Control " by Andrew Lyden.
 
-PyLESA is compatible with Python 3.7.6.
-
 # Running PyLESA
 
-1.	Install Python 3.7.6. and dependencies in requirements.txt, it is recommended to use an Anaconda Installtion (https://www.anaconda.com/products/individual). Download source code and ensure repository structure includes Inputs and Outputs folders to save processing and outputs.
+1.	Install Python3 (code has only been tested on Python 3.7.6. but should work with similar) and dependencies in requirements.txt, it is recommended to use an Anaconda Installation (https://www.anaconda.com/products/individual) as these will contain the majority of required packages. Download source code and ensure repository structure includes Inputs and Outputs folders to save processing and outputs.
 2.  Define and gather data on the local energy system to be modelled including resources, demands, supply, storage, grid connection, and control strategy. Input these using one of the template Excel Workbooks from the Inputs folder.
 3.	Optionally run the demand and resource assessment methods to generate hourly or sub-hourly profiles depending on available data. Input generated profiles, along with the increments and ranges to be modelled within the required parametric design, into the Excel Workbook.
 4.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, i.e. “…/PyLESA/PyLESA”, enter “python run.py” and when prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
