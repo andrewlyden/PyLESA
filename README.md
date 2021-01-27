@@ -8,7 +8,7 @@ This tool was developed as part of a PhD, "Modelling and Design of Local Energy 
 
 # Running PyLESA
 
-1.	Install Python3 (code has only been tested on Python 3.7.6. but should work with similar) and dependencies in requirements.txt, it is recommended to use an Anaconda Installation (https://www.anaconda.com/products/individual) as these will contain the majority of required packages. Download source code and create a folder called 'outputs' in the root of the directory.
+1.	Install Python3 (code has only been tested on Python 3.7.6. but should work with similar) and dependencies in requirements.txt, it is recommended to use an Anaconda Installation (https://www.anaconda.com/products/individual) as these will contain the majority of required packages. Download source code.
 2.  Define and gather data on the local energy system to be modelled including resources, demands, supply, storage, grid connection, and control strategy. Define the increments and ranges to be modelled within the required parametric design. Input all this data using one of the template Excel Workbooks from the 'inputs' folder.
 3.	Optionally run the demand (heat_demand.py and electricity_demand.py) and resource assessment methods (see PhD thesis for details) to generate hourly profiles depending on available data. Input generated profiles into the Excel Workbook.
 4.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, e.g. “…/PyLESA-1.1/PyLESA”, enter “python run.py” and when prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
