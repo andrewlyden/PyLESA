@@ -13,3 +13,5 @@ This tool was developed as part of a PhD, "Modelling and Design of Local Energy 
 3.	Optionally run the demand (heat_demand.py and electricity_demand.py) and resource assessment methods (see PhD thesis for details) to generate hourly profiles depending on available data. Input generated profiles into the Excel Workbook.
 4.	Using a terminal (e.g. PowerShell) navigate to the relevant directory, e.g. “…/PyLESA-1.1/PyLESA”, enter “python run.py” and when prompted enter the input Excel workbook filename (excluding the file extension “.xlsx”).
 5.	After the run is complete, open the Outputs folder to view the KPI 3D plots and/or operational graphs, as well as .csv outputs. (Note an error will be raised if only one simulation combination is run, as 3D plots cannot be processed.) There are also raw outputs.pkl file for each simulation combination which contains a vast range of raw outputs.
+
+Video on running PyLESA: https://youtu.be/QsJut9ftCT4
