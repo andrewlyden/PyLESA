@@ -1,0 +1,2 @@
+hp_sizes,ts_sizes,local_RES_used,total_RES_self_consumption,grid_RES_used,total_RES_used,heat_met_RES,demand_met_RES,HP_met_RES,HP_size_ratio,HP_utilisation,days_storage_content
+1000.0,400.0,100.0,8220.0883957406,0.0,8220.0883957406,50.93589094025715,40.8291074473493,50.93589094025715,3.62,173.0,1.735488598426362
