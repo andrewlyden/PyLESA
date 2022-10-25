@@ -223,7 +223,11 @@ class Input(object):
         df = self.excel_sheets['Wind inputs']
 
         wind_database = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
+<<<<<<< HEAD
                                          'Unnamed: 6'],
+=======
+                                         'Unnamed: 6', 'Unnamed: 7'],
+>>>>>>> c61c8b3da79c92188ed9a5aad4904eca5fce210c
                                 index=[12, 17, 18])
         wind_database = wind_database.dropna(axis='index', how='any')
         wind_database = wind_database.rename(
@@ -234,7 +238,12 @@ class Input(object):
         wind_database = wind_database.reset_index(drop=True)
         self.container['wind_database'] = wind_database
 
+<<<<<<< HEAD
         my_turbine = df.drop(columns=['Unnamed: 0', 'Unnamed: 1'],
+=======
+        my_turbine = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
+                                      'Unnamed: 7'],
+>>>>>>> c61c8b3da79c92188ed9a5aad4904eca5fce210c
                              index=[17])
         my_turbine = my_turbine.dropna(axis='index', how='any')
         my_turbine = my_turbine.rename(
@@ -248,7 +257,11 @@ class Input(object):
 
         power_curve = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
                                        'Unnamed: 4', 'Unnamed: 5',
+<<<<<<< HEAD
                                        'Unnamed: 6'],
+=======
+                                       'Unnamed: 6', 'Unnamed: 7'],
+>>>>>>> c61c8b3da79c92188ed9a5aad4904eca5fce210c
                               index=[12, 13, 17, 18, 21])
         power_curve = power_curve.dropna(axis='index', how='any')
         power_curve = power_curve.rename(
@@ -273,7 +286,12 @@ class Input(object):
                      'efficiency': efficiency}
         self.container['wind_farm'] = wind_farm
 
+<<<<<<< HEAD
         df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1'],
+=======
+        df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1',
+                              'Unnamed: 7'],
+>>>>>>> c61c8b3da79c92188ed9a5aad4904eca5fce210c
                      index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                             11, 12, 13, 14, 15, 16, 17])
         df = df.rename(columns={'Unnamed: 2': 'wind_speed_10',
