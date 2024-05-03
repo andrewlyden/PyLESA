@@ -1,6 +1,10 @@
 # Excel files (use git add -f file.xlsx to force adding)
 *.xlsx
 
+# New files in inputs / outputs directory
+inputs/
+outputs/
+
 # Pickle files
 *.pkl
 
