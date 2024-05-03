@@ -9,7 +9,7 @@ from . import mpc
 from . import outputs
 
 def main(xlsxpath: str):
-    """Entry point for the PyLESA programme
+    """Run PyLESA, an open source tool capable of modelling local energy systems.
     
     Args:
         xlsxpath: path to Excel input file
