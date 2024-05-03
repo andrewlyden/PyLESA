@@ -4,9 +4,9 @@ this is the analysis of the weather data
 """
 
 import pandas as pd
-import tools as t
 import numpy as np
 
+from . import tools as t
 
 class Weather(object):
 

@@ -4,13 +4,13 @@ simplifies initialising all the models for use
 in the control scripts
 """
 
-import inputs
-import renewables
-import hot_water_tank
-import heatpump
-import electrical_storage
-import auxiliary
-import grid
+from . import inputs
+from . import renewables
+from . import hot_water_tank
+from . import heatpump
+from . import electrical_storage
+from . import auxiliary
+from . import grid
 
 
 def init(name, subname):

@@ -7,8 +7,8 @@ import pandas as pd
 import datetime
 import matplotlib.pyplot as plt
 
-import renewables
-import inputs
+from . import renewables
+from . import inputs
 
 plt.style.use('ggplot')
 

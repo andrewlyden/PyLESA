@@ -10,7 +10,7 @@ import math
 
 from scipy.integrate import odeint
 
-import weather
+from . import weather
 
 
 class HotWaterTank(object):

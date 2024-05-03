@@ -14,9 +14,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-import tools as t
-import weather
-import inputs
+from . import tools as t
+from . import weather
+from . import inputs
 
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 22})

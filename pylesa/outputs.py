@@ -12,9 +12,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-import inputs
-import tools as t
-import grid
+from . import inputs
+from . import tools as t
+from . import grid
 
 """
 plt.style.available

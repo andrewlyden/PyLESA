@@ -5,13 +5,9 @@ additionally includes methods for analysis relating to modelling outputs
 """
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import math
 import os
 import numpy as np
-
-import weather
-import inputs
 
 import pvlib
 from pvlib.pvsystem import PVSystem
@@ -23,6 +19,9 @@ from windpowerlib.wind_turbine import WindTurbine
 
 from windpowerlib.turbine_cluster_modelchain import TurbineClusterModelChain
 from windpowerlib.wind_farm import WindFarm
+
+from . import weather
+from . import inputs
 
 # # You can use the logging package to get
 # # logging messages from the windpowerlib

@@ -10,9 +10,9 @@ from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 import pickle
 import os
 
-import initialise_classes
-import inputs
-import tools
+from . import initialise_classes
+from . import inputs
+from . import tools
 
 
 class Scheduler(object):

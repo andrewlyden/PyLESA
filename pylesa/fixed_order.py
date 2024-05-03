@@ -16,8 +16,8 @@ import pickle
 
 from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 
-import initialise_classes
-import inputs
+from . import initialise_classes
+from . import inputs
 
 
 class FixedOrder(object):
