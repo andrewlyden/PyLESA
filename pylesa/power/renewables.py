@@ -20,8 +20,8 @@ from windpowerlib.wind_turbine import WindTurbine
 from windpowerlib.turbine_cluster_modelchain import TurbineClusterModelChain
 from windpowerlib.wind_farm import WindFarm
 
-from . import weather
-from . import inputs
+from .. import inputs
+from ..environment import weather
 
 # # You can use the logging package to get
 # # logging messages from the windpowerlib

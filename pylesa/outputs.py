@@ -14,7 +14,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 from . import inputs
 from . import tools as t
-from . import grid
+from .power import grid
 
 """
 plt.style.available

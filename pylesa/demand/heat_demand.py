@@ -294,7 +294,7 @@ def findhorn_demand():
         os.path.dirname(__file__), "..", "data",
         "demand", "predicted_heat_demand.csv")
     df = pd.read_csv(file, header=None, names=['dem'])
-    print df['dem'].sum()
+    print(df['dem'].sum())
 
     # # Heating from March to November only hot water
     # df['dem'][2160:7320] = 0.5025

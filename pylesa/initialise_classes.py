@@ -5,12 +5,9 @@ in the control scripts
 """
 
 from . import inputs
-from . import renewables
-from . import hot_water_tank
-from . import heatpump
-from . import electrical_storage
-from . import auxiliary
-from . import grid
+from .power import grid, renewables
+from .storage import hot_water_tank, electrical_storage
+from .heat import heatpump, auxiliary
 
 
 def init(name, subname):
