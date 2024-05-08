@@ -4,7 +4,7 @@ contains class for auxiliaries which covers
 back up heaters
 """
 
-from .. import inputs
+from ..io import inputs
 
 
 def aux_outputs(demand):

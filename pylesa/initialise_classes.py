@@ -4,7 +4,7 @@ simplifies initialising all the models for use
 in the control scripts
 """
 
-from . import inputs
+from .io import inputs
 from .power import grid, renewables
 from .storage import hot_water_tank, electrical_storage
 from .heat import heatpump, auxiliary

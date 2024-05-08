@@ -1,7 +1,7 @@
-import grid
-import inputs
-
 import matplotlib.pyplot as plt
+
+import pylesa.power.grid as grid
+import pylesa.io.inputs as inputs
 
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 22})

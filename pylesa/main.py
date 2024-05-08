@@ -2,11 +2,9 @@ from pathlib import Path
 import time
 
 from . import parametric_analysis
-from . import inputs
-from . import outputs
 from .controllers import fixed_order
 from .controllers import mpc
-from .io import read_excel
+from .io import inputs, outputs, read_excel
 
 def main(xlsxpath: str):
     """Run PyLESA, an open source tool capable of modelling local energy systems.

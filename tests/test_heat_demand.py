@@ -1,4 +1,4 @@
-import heat_demand as d
+import pylesa.demand.heat_demand as d
 
 name = 'findhorn - west whins.xlsx'
 subname = 'hp_14_ts_550'

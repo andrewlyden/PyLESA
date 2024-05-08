@@ -1,5 +1,5 @@
-import weather
-import inputs
+import pylesa.environment.weather as weather
+import pylesa.io.inputs as inputs
 
 
 def test_PV_weather():
@@ -13,7 +13,7 @@ def test_PV_weather():
                                  air_temperature=i['air_temperature'],
                                  air_density=i['air_density'],
                                  water_temperature=i['water_temperature']).PV()
-    print PV_weather
+    print(PV_weather)
 
 
 def wind_weather():
@@ -25,7 +25,7 @@ def wind_weather():
         roughness_length=i['roughness_length'],
         pressure=i['pressure'],
         air_temperature=i['air_temperature']).wind_turbine()
-    print wind_weather
+    print(wind_weather)
 
 
 # wind_weather()

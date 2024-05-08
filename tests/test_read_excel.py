@@ -1,4 +1,4 @@
-import read_excel
+import pylesa.io.read_excel as read_excel
 
 read_excel.run_all('WWHC_FOC_WM.xlsx')
 

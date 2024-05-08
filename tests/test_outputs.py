@@ -1,5 +1,4 @@
 import outputs
-import inputs
 
 
 def run_kpis():

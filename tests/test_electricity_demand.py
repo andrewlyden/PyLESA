@@ -1,4 +1,4 @@
-import electricity_demand as e
+import pylesa.demand.electricity_demand as e
 
 
 name = 'findhorn - west whins.xlsx'

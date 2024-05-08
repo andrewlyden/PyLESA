@@ -8,7 +8,7 @@ import datetime
 import matplotlib.pyplot as plt
 
 from . import renewables
-from .. import inputs
+from ..io import inputs
 
 plt.style.use('ggplot')
 

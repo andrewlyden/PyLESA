@@ -2,8 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-import heatpump
-import inputs
+import pylesa.heat.heatpump as heatpump
+import pylesa.io.inputs as inputs
 
 plt.style.use('ggplot')
 
@@ -59,7 +59,7 @@ def simple():
         weather,
         simple_cop=inputs_simple)
 
-    print simpleHeatPump.performance()
+    print(simpleHeatPump.performance())
 
 
 # simple()
@@ -85,7 +85,7 @@ def lorentz():
         weather,
         lorentz_inputs=inputs_lorentz)
 
-    # print HeatPump.performance()
+    # print(HeatPump.performance())
 
     HeatPump.flow_temp_source = [70] * 8760
     hp1 = HeatPump.performance()
@@ -132,7 +132,7 @@ def generic():
         inputs_demands['return_temp_DH'],
         weather)
 
-    print HeatPump.performance()
+    print(HeatPump.performance())
 
 
 # generic()

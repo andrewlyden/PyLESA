@@ -1,5 +1,6 @@
-import mpc
 import time
+
+import pylesa.controllers.mpc as mpc
 
 # final hour is first_hour + timesteps
 # final hour must be smaller than 8760
@@ -115,7 +116,7 @@ t0 = time.time()
 validation()
 t1 = time.time()
 tot_time = (t1 - t0) / 60.0
-print 'MPC complete. Time taken: ', tot_time, 'minutes'
+print('MPC complete. Time taken: ', tot_time, 'minutes')
 
 # flat_rate()
 # t0 = time.time()

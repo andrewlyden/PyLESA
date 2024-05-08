@@ -1,5 +1,5 @@
-import electrical_storage
-import inputs
+import pylesa.storage.electrical_storage as electrical_storage
+import pylesa.io.inputs as inputs
 
 
 def battery_charge():
@@ -20,8 +20,8 @@ def battery_charge():
 
     new_soc = myElectricalStorage.new_soc(match, soc)
     losses = myElectricalStorage.total_losses(match, soc)
-    print new_soc, 'new_soc',
-    print losses, 'losses'
+    print(new_soc, 'new_soc')
+    print(losses, 'losses')
 
 
 battery_charge()

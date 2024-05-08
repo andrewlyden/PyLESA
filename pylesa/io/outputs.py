@@ -13,8 +13,9 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 from . import inputs
-from . import tools as t
-from .power import grid
+
+from .. import tools as t
+from ..power import grid
 
 """
 plt.style.available

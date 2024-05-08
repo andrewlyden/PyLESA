@@ -1,4 +1,4 @@
-import fixed_order
+import pylesa.controllers.fixed_order as fixed_order
 
 first_hour = 4000
 timesteps = 100

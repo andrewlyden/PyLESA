@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import hot_water_tank
-import inputs
+import pylesa.storage.hot_water_tank as hot_water_tank
+import pylesa.io.inputs as inputs
 
 
 def validation():

@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
-import numpy as np
-import os
 
-import renewables
+import pylesa.power.renewables as renewables
 import inputs
 
 name = 'WWHC_FOC_WM.xlsx'
