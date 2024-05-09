@@ -1,7 +1,6 @@
 """grid module for generating electricity tariffs
 """
-
-import os
+from importlib.resources import files as ifiles
 import numpy as np
 import pandas as pd
 import datetime
@@ -319,10 +318,8 @@ class Grid(object):
         vp = self.variable_periods_series()
 
         # read in csv
-        file = os.path.join(
-            os.path.dirname(__file__), "..", "data",
-            "FindImEx.csv")
-        df = pd.read_csv(file, header=None, names=['import', 'export'])
+        path = ifiles('pylesa').joinpath('data', 'FindImEx.csv')
+        df = pd.read_csv(path, header=None, names=['import', 'export'])
         net = df['export'] - df['import']
 
         band = 50

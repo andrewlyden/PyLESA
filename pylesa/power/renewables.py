@@ -3,6 +3,7 @@
 creates class objects for wind turbines and PV for modelling
 additionally includes methods for analysis relating to modelling outputs
 """
+from importlib.resources import files as ifiles
 import logging
 import pandas as pd
 import math
@@ -387,9 +388,7 @@ class Windturbine(object):
         # specification of wind turbine where
         # power coefficient curve and nominal
         # power is provided in an own csv file
-
-        csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "data", 'oedb')#, 'power_curves.csv')
+        csv_path = ifiles('pylesa').joinpath('data', 'oedb')
 
         myTurbine = {
             'turbine_type': self.turbine_name,  # turbine type as in file
@@ -433,15 +432,14 @@ class Windturbine(object):
 
         # specification of wind turbine where
         # power coefficient curve and nominal
-        # power is provided in an own csv file
 
         if self.multiplier == 0:
             data = np.zeros(8760)
             df = pd.DataFrame(data, columns=['wind_farm'])
             return df
 
-        csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "data", 'oedb')
+        # power is provided in an own csv file
+        csv_path = ifiles('pylesa').joinpath('data', 'oedb')
         myTurbine = {
             'turbine_type': self.turbine_name,  # turbine type as in file
             'hub_height': self.hub_height,  # in m

@@ -45,7 +45,6 @@ class Weather(object):
 
     def wind_turbine(self):
 
-        # wind_weather = pd.DataFrame([])
         data = {'wind1': self.wind_speed_10['wind_speed_10'].tolist(),
                 'air': self.air_temperature['air_temperature'].tolist(),
                 'pres': self.pressure['pressure'].tolist(),

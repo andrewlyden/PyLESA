@@ -1,5 +1,6 @@
 """generating heat demand profiles
 """
+from importlib.resources import files as ifiles
 import logging
 import os
 import pandas as pd
@@ -109,10 +110,7 @@ def standard_profile_file():
 
     # this reads the excel sheet and creates a pickle
     # containing all of the standard profiles
-
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "data", "demand", 'demand.xlsx')
-
+    path = ifiles('pylesa').joinpath('data', 'demand.demand.xlsx')
     df = pd.read_excel(
         path, sheet_name=None, skiprows=2, usecols="B:AG")
 
@@ -128,23 +126,18 @@ def standard_profile_file():
         index = pd.MultiIndex.from_product(iterables, names=['types', 'age'])
         df[deg].columns = index
 
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "demand_profiles.pkl")
-    with open(file, 'wb') as output_file:
+    opath = ifiles('pylesa').joinpath('data', 'demand.demand_profiles.pkl')
+    with open(opath, 'wb') as ofile:
         pickle.dump(
-            df, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+            df, ofile, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def standard_day_profile(type1, age, temp):
 
     # gives dic of profiles at the different temps
     # for a type of building of certain age
-
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "demand_profiles.pkl")
-    df = pd.read_pickle(file)
+    path = ifiles('pylesa').joinpath('data', 'demand.demand_profiles.pkl')
+    df = pd.read_pickle(path)
 
     if temp < 0:
         temp = 'N' + str(-1 * temp)
@@ -277,10 +270,8 @@ def predicted_demand(name, subname):
     plt.plot(range(8760), yMA)
     plt.show()
 
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "predicted_heat_demand.csv")
-    np.savetxt(file, yMA, delimiter=",", fmt='%.3e')
+    path = ifiles('pylesa').joinpath('data', 'demand.predicted_heat_demand.csv')
+    np.savetxt(path, yMA, delimiter=",", fmt='%.3e')
 
 
 def findhorn_demand():
@@ -291,10 +282,8 @@ def findhorn_demand():
     # reduce heating by 7000kWh by shortening heating season
 
     # read in csv
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "predicted_heat_demand.csv")
-    df = pd.read_csv(file, header=None, names=['dem'])
+    path = ifiles('pylesa').joinpath('data', 'demand.predicted_heat_demand.csv')
+    df = pd.read_csv(path, header=None, names=['dem'])
     LOG.debug(f'Sum of dem: {df['dem'].sum()}')
 
     # # Heating from March to November only hot water

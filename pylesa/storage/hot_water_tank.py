@@ -3,8 +3,8 @@
 lowest capacity is 100L, this can be used as
 "no" thermal storage simulation as long as demand is large
 """
+from importlib.resources import files as ifiles
 import logging
-import os
 import pandas as pd
 import math
 
@@ -70,12 +70,10 @@ class HotWaterTank(object):
         # optional input, needed if location is set to outside
         self.air_temperature = air_temperature
 
-        file = os.path.join(os.path.dirname(__file__),
-                            "..",
-                            "data",
-                            'water_spec_heat.pkl')
-        df = pd.read_pickle(file)
-        self.cp_spec = df
+        self.cp_spec = pd.read_pickle(
+            # Use importlib.resources to manage files required by package
+            ifiles('pylesa').joinpath('data', 'water_spec_heat.pkl')
+        )
 
     def init_temps(self, initial_temp):
         nodes_temp = []

@@ -1,6 +1,6 @@
 """generating electrical demand profile from elexon profiles
 """
-
+from importlib.resources import files as ifiles
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,9 +14,7 @@ def import_elexon_profile():
 
     # import the unrestricted residential
     # elexon electricity profile from excel sheet
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "electricity_profiles.xlsx")
+    path = ifiles('pylesa').joinpath('data', 'electricity_profiles.xlsx')
     df = pd.read_excel(path)
     df = df.drop(columns=['Profile Class 1'])
     columns = df.iloc[1].values
@@ -136,18 +134,13 @@ def predicted_demand(year, name, subname):
     inserting = ratio * inserting
     yMA = np.insert(yMA, 1, inserting)
 
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "predicted_elec_demand.csv")
-    np.savetxt(file, yMA, delimiter=",", fmt='%.3e')
+    path = ifiles('pylesa').joinpath('data', 'demand.predicted_elec_demand.csv')
+    np.savetxt(path, yMA, delimiter=",", fmt='%.3e')
 
 
 def plot_demand():
-
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "data",
-        "demand", "predicted_elec_demand.csv")
-    df = pd.read_csv(file, header=None, names=['dem'])
+    path = ifiles('pylesa').joinpath('data', 'demand.predicted_elec_demand.csv')
+    df = pd.read_csv(path, header=None, names=['dem'])
 
     plt.plot(df['dem'][24:72], 'b', LineWidth=1)
     plt.ylabel('Energy (kWh)')

@@ -117,9 +117,6 @@ def PV_test():
     plt.xlabel('Hour of year')
     plt.show()
 
-    # file = os.path.join(
-    #     os.path.dirname(__file__), "..", "data", 'PV_output.csv')
-    # np.savetxt(file, power.values, delimiter=",", fmt='%.3e')
     print(power.max())
     print(power.sum())
 
