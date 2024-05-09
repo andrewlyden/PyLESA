@@ -6,7 +6,7 @@ simple, lorentz, generic regression, and standard test regression
 """
 import os
 import math
-
+import logging
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,9 +18,14 @@ from .. import tools as t
 from ..io import inputs
 from ..environment import weather
 
+LOG = logging.getLogger(__name__)
+
+ASHP = "ASHP"
+GSHP = "GSHP"
+WSHP = "WSHP"
+
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 22})
-
 
 def perf(name, subname):
 
@@ -172,20 +177,22 @@ class HeatPump(object):
             air_temperature=self.hp_ambient_temp['air_temperature'],
             water_temperature=self.hp_ambient_temp['water_temperature']).heatpump()
 
-        if self.hp_type == 'ASHP':
+        if self.hp_type == ASHP:
 
             HP_resource = HP_resource.rename(
                 columns={'air_temperature': 'ambient_temp'})
             return HP_resource[['ambient_temp']]
 
-        elif self.hp_type == 'WSHP':
+        elif self.hp_type == WSHP:
 
             HP_resource = HP_resource.rename(
                 columns={'water_temperature': 'ambient_temp'})
             return HP_resource[['ambient_temp']]
 
         else:
-            print('ERROR invalid heat pump type')
+            msg = f"Invalid heat pump type: {self.hp_type}, must be {ASHP} or {WSHP}"
+            LOG.error(msg)
+            raise ValueError(msg)
 
     def performance(self):
         """performance over year of heat pump
@@ -252,12 +259,12 @@ class HeatPump(object):
                 hp_duty = myLorentz.calc_duty(self.capacity)
 
             elif self.modelling_approach == 'Generic regression':
-                if self.hp_type == 'ASHP':
+                if self.hp_type == ASHP:
                     cop = myGenericRegression.ASHP_cop(
                         self.flow_temp_source[timestep],
                         ambient_temp[timestep])
 
-                elif self.hp_type == 'GSHP' or self.hp_type == 'WSHP':
+                elif self.hp_type == GSHP or self.hp_type == WSHP:
                     cop = myGenericRegression.GSHP_cop(
                         self.flow_temp_source[timestep],
                         ambient_temp[timestep])
@@ -283,7 +290,7 @@ class HeatPump(object):
                         self.flow_temp_source[timestep])
 
                 elif self.data_input == 'Peak performance':
-                    if self.hp_type == 'ASHP':
+                    if self.hp_type == ASHP:
 
                         if ambient_temp[timestep] <= 5:
                             cop = 0.9 * myStandardRegression.predict_COP(

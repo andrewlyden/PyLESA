@@ -1,11 +1,14 @@
 """generating heat demand profiles
 """
+import logging
 import os
 import pandas as pd
 import numpy as np
 import pickle
 
 import matplotlib.pyplot as plt
+
+LOG = logging.getLogger(__name__)
 
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 18})
@@ -74,8 +77,6 @@ def floor_area_scaling_factor():
             else:
                 factor = floor[y] / 90.0
                 floor_else[y] = round(factor, 2)
-
-    # print floor_detached, floor_midterrace, floor_else
 
     u = {}
     v1 = {}
@@ -294,13 +295,12 @@ def findhorn_demand():
         os.path.dirname(__file__), "..", "data",
         "demand", "predicted_heat_demand.csv")
     df = pd.read_csv(file, header=None, names=['dem'])
-    print(df['dem'].sum())
+    LOG.debug(f'Sum of dem: {df['dem'].sum()}')
 
     # # Heating from March to November only hot water
     # df['dem'][2160:7320] = 0.5025
     # # reduced by factor 0.875
     # df['dem'] = df['dem'] * 0.875
-    # print df['dem'].sum()
 
     plt.plot(df['dem'][0:8760], 'r', LineWidth=2)
     plt.ylabel('Energy (kWh)')

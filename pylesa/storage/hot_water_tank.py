@@ -3,7 +3,7 @@
 lowest capacity is 100L, this can be used as
 "no" thermal storage simulation as long as demand is large
 """
-
+import logging
 import os
 import pandas as pd
 import math
@@ -12,6 +12,15 @@ from scipy.integrate import odeint
 
 from ..environment import weather
 
+LOG = logging.getLogger(__name__)
+
+INSULATION_k = {
+    'polyurethane': 0.025,
+    'fibreglass': 0.04,
+    'polystyrene': 0.035
+}
+INSIDE = 'Inside'
+OUTSIDE = 'Outside'
 
 class HotWaterTank(object):
 
@@ -90,20 +99,15 @@ class HotWaterTank(object):
         Returns:
             float -- k-value of insulation W/mK
         """
-
-        if self.insulation == 'Polyurethane':
-            k = 0.025
-        elif self.insulation == 'Fibreglass':
-            k = 0.04
-        elif self.insulation == 'Polystyrene':
-            k = 0.035
-        else:
-            print('Error in choice of insulation')
+        if not self.insulation in INSULATION_k:
+            msg = f'Insulation {self.insulation} is not valid, must be one of {INSULATION_k}'
+            LOG.error(msg)
+            raise ValueError(msg)
 
         # units of k need to be adjusted from W to joules
         # over the hour, and this requires
         # minuts in hour * seconds in minute (60*60)
-        return k * 3600
+        return INSULATION_k[self.insulation.lower()] * 3600
 
     def specific_heat_water(self, temp):
         """cp of water
@@ -141,9 +145,9 @@ class HotWaterTank(object):
     def amb_temp(self, timestep):
         """ambient temperature surrounding tank
 
-        # if location of storage is inside
-        # then a 15 deg ambient condition is assumed
-        # elif location is outside then outdoor temperature is used
+        If location of storage is inside then a 15 deg ambient
+        condition is assumed else if location is outside then
+        outdoor temperature is used.
 
         Arguments:
             timestep {int} --
@@ -151,17 +155,19 @@ class HotWaterTank(object):
         Returns:
             float -- ambient temp surrounding tank degC
         """
-        if self.location == 'Outside':
+        if self.location == OUTSIDE:
 
             w = weather.Weather(
                 air_temperature=self.air_temperature).hot_water_tank()
             ambient_temp = w['air_temperature']['air_temperature'][timestep]
 
-        elif self.location == 'Inside ':
+        elif self.location == INSIDE:
             ambient_temp = 15.0
 
         else:
-            print('Error in location definition')
+            msg = f'Location {self.location} not valid, must be one of [{INSIDE}, {OUTSIDE}]'
+            LOG.error(msg)
+            raise ValueError(msg)
         return ambient_temp
 
     def discharging_function(self, state, nodes_temp, flow_temp):
@@ -204,7 +210,6 @@ class HotWaterTank(object):
             for node in node_list:
                 function[node] = 0
 
-        # print(function, 'dis_function')
         return function
 
     def discharging_bottom_node(self, state, nodes_temp,
@@ -238,7 +243,6 @@ class HotWaterTank(object):
             for node in node_list:
                 function[node] = 0
 
-        # print(function, 'dis_function_bottom_node')
         return function
 
     def charging_function(self, state, nodes_temp, source_temp):
@@ -254,8 +258,6 @@ class HotWaterTank(object):
         total_nodes = self.number_nodes
         node_list = range(total_nodes)
         function = {}
-        # print(source_temp)
-        # print(nodes_temp[0])
         if state == 'charging':
 
             for node in node_list:
@@ -283,7 +285,6 @@ class HotWaterTank(object):
         elif state == 'discharging' or 'standby':
             for node in node_list:
                 function[node] = 0
-        # print(function, 'cha_function')
         return function
 
     def charging_top_node(self, state):
@@ -295,7 +296,6 @@ class HotWaterTank(object):
                 function[node] = 1
             else:
                 function[node] = 0
-        # print(function, 'charging_top_node')
 
         return function
 
@@ -463,8 +463,6 @@ class HotWaterTank(object):
             # max_mass_flow_dis = self.mass_flow_to_discharge(
             #     nodes_temp, source_temp,
             #     flow_temp, return_temp, timestep)
-            # print
-            # max_mass_flow_dis, 'mmfd'
             mass_ts = self.thermal_storage_mass_discharging(
                 thermal_output, source_temp, source_delta_t,
                 return_temp, flow_temp, demand, temp_tank_top)
@@ -480,41 +478,25 @@ class HotWaterTank(object):
     def coefficient_A(self, state, node, nodes_temp, mass_flow,
                       source_temp, flow_temp):
         node_mass = self.calc_node_mass()
-        # print node_mass, 'node_mass'
 
         # specific heat at temperature of node i
         cp = self.specific_heat_water(nodes_temp[node])
 
-        # print cp, 'cp'
-
         # thermal conductivity of insulation material
         k = self.insulation_k_value()
-        # print k, 'k'
 
         # dimensions
         r1 = self.internal_radius()
-        # print r1, 'r1'
         r2 = self.dimensions['width']
-        # print r2, 'r2'
         h = self.dimensions['height']
-        # print h, 'h'
 
         # correction factors
         Fi = self.correction_factors['insulation_factor']
-        # print Fi, 'Fi'
         Fe = self.correction_factors['overall_factor']
-        # print Fe, 'Fe'
-
         Fd = self.discharging_function(state, nodes_temp, flow_temp)[node]
-        # print Fd, 'Fd'
-        # print Fd, 'Fd'
-
         mf = self.mixing_function(state, node, nodes_temp,
                                   source_temp, flow_temp)
-        # print mf
-
         Fco = self.charging_top_node(state)[node]
-        # print Fco, 'Fco'
 
         A = (- Fd * mass_flow * cp -
              mf['Fdnt'] * mass_flow * cp -
@@ -592,7 +574,6 @@ class HotWaterTank(object):
         # errors may lead to slight overestimation of maximum mass flow
         # this accounts for this and ensures not going over node mass
         mass_flow = min(mass_flow1, self.calc_node_mass())
-        # print mass_flow, 'mass_flow'
 
         c = []
         for node in range(self.number_nodes):
@@ -611,12 +592,6 @@ class HotWaterTank(object):
     def new_nodes_temp(self, state, nodes_temp, source_temp,
                        source_delta_t, flow_temp, return_temp,
                        thermal_output, demand, timestep):
-
-        # print nodes_temp
-        # print state
-        # print thermal_output
-        # print demand
-
         if self.capacity == 0:
             return nodes_temp
 
@@ -699,7 +674,6 @@ class HotWaterTank(object):
 
         # solve ODE
         for i in range(1, t + 1):
-            # print nodes_temp[1]
             # span for next time step
             tspan = [i - 1, i]
             # solve for next step
@@ -708,10 +682,7 @@ class HotWaterTank(object):
                 state, nodes_temp, source_temp, source_delta_t,
                 flow_temp, return_temp, thermal_output, demand,
                 nodes_temp[bottom], nodes_temp[top], timestep)))
-            # print nodes_temp, 'node temps'
-            # print source_temp[i], 'source temp'
-            # print flow_temp[i], 'flow_temp'
-            # print return_temp, 'return temp'
+
             z = odeint(
                 model_temp, nodes_temp, tspan,
                 args=(coefficients[i],))
@@ -725,40 +696,27 @@ class HotWaterTank(object):
                           flow_temp):
 
         node_mass = self.calc_node_mass()
-        # print node_mass, 'node_mass'
 
         # specific heat at temperature of node i
-        # print nodes_temp[node]
         cp = self.specific_heat_water(nodes_temp[node])
-        # print cp, 'cp'
 
         # thermal conductivity of insulation material
         k = self.insulation_k_value()
-        # print k, 'k'
 
         # dimensions
         r1 = self.internal_radius()
-        # print r1, 'r1'
         r2 = self.dimensions['width']
-        # print r2, 'r2'
         h = self.dimensions['height']
-        # print h, 'h'
 
         # correction factors
         Fi = self.correction_factors['insulation_factor']
-        # print Fi, 'Fi'
         Fe = self.correction_factors['overall_factor']
-        # print Fe, 'Fe'
 
         Fd = self.discharging_function(state, nodes_temp, flow_temp)[node]
-        # print Fd, 'Fd'
-        # print Fd, 'Fd'
         mf = self.mixing_function(state, node, nodes_temp,
                                   source_temp, flow_temp)
-        # print mf
 
         Fco = self.charging_top_node(state)[node]
-        # print Fco, 'Fco'
 
         mass_flow = self.calc_node_mass()
 
@@ -824,9 +782,6 @@ class HotWaterTank(object):
         cl = self.connection_losses()
 
         mass_flow = node_mass
-
-        # print source_temp, 'here?'
-        # print return_temp
 
         D = (Fc * mass_flow * cp * source_temp +
              Fdi * mass_flow * cp * return_temp +
@@ -932,12 +887,9 @@ class HotWaterTank(object):
             elif state == 'discharging' and nodes_temp[0] > flow_temp:
                 energy = mass_flow * cp * (
                     nodes_temp[0] - return_temp)
-                # print energy / 3600000, 'energy'
-                # print mass_flow, 'mass'
             else:
                 energy = 0
             energy_list.append(energy)
-            # print nodes_temp[1]
             # span for next time step
             tspan = [i - 1, i]
             # solve for next step
@@ -945,11 +897,6 @@ class HotWaterTank(object):
             coefficients.append((self.set_of_max_coefficients(
                 state, nodes_temp, source_temp,
                 flow_temp, return_temp, timestep)))
-            # print coefficients[i], 'coef'
-            # print nodes_temp, 'node temps'
-            # print source_temp[i], 'source temp'
-            # print flow_temp[i], 'flow_temp'
-            # print return_temp, 'return temp'
 
             z = odeint(
                 model_temp, nodes_temp, tspan,
@@ -958,5 +905,4 @@ class HotWaterTank(object):
 
         # convert J to kWh by divide by 3600000
         energy_total = sum(energy_list) / 3600000
-        # print energy_total, 'energy_total'
         return energy_total

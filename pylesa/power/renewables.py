@@ -3,7 +3,7 @@
 creates class objects for wind turbines and PV for modelling
 additionally includes methods for analysis relating to modelling outputs
 """
-
+import logging
 import pandas as pd
 import math
 import os
@@ -23,11 +23,8 @@ from windpowerlib.wind_farm import WindFarm
 from ..io import inputs
 from ..environment import weather
 
-# # You can use the logging package to get
-# # logging messages from the windpowerlib
-# # Change the logging level if you want more or less messages
-# import logging
-# logging.getLogger().setLevel(logging.DEBUG)
+LOG = logging.getLogger(__name__)
+
 np.seterr(invalid='ignore')
 
 def sum_renewable_generation():
@@ -173,7 +170,6 @@ class PV(object):
 
         # of inverters and returns a pandas df
         CEC_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
-        # print(CEC_inverters)
         inverter1 = 'iPower__SHO_4_8__240V_'
         self.inverter = CEC_inverters[inverter1]
 
@@ -237,7 +233,6 @@ class PV(object):
             start='01/01/2017', end='01/01/2018',
             freq='1h', tz='Europe/London', closed='left')
         # times = naive_times.tz_localize('Europe/London')
-        # print weather
         # weather = pd.DataFrame(
         #     [[1050, 1000, 100, 30, 5]],
         #     columns=['ghi', 'dni', 'dhi', 'temp_air', 'wind_speed'],

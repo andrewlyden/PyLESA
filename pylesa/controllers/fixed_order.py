@@ -7,7 +7,7 @@ which the supply, demand and storage operate
 the fixed order control contains a set order of operations
 which are followed
 """
-
+import logging
 import os
 import pandas as pd
 import numpy as np
@@ -19,6 +19,7 @@ from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 from .. import initialise_classes
 from ..io import inputs
 
+LOG = logging.getLogger(__name__)
 
 class FixedOrder(object):
 
@@ -105,9 +106,6 @@ class FixedOrder(object):
 
         # run controller for each timestep
         for timestep in range(first_hour, final_hour):
-
-            # print timestep, 'timestep'
-
             heat_demand = self.heat_demand[timestep]
             source_temp = self.source_temp[timestep]
             flow_temp = self.flow_temp[timestep]
@@ -398,33 +396,20 @@ class FixedOrder(object):
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
                    100.0 * hp_performance['duty'])
-        # print min_out, 'minimum_output'
-        # print min_out, 'minimum_output'
         hp_usage = results['HP']['heat_total_output']
-        # print hp_usage, 'hp_use'
 
         # need to change results if threshold not met
         if hp_usage < min_out and hp_usage > 0.1:
-            # print 'thershold not met'
             # new charge is the difference between
             # original hp usage and minimum output
             HP_increase = min_out - hp_usage
             # what if not enough space in thermal store
             state = 'charging'
-            # print state
-            # print nodes_temp
-            # print source_temp
-            # print flow_temp
-            # print self.return_temp
-            # print timestep
             tank_charge_left = (self.myHotWaterTank.max_energy_in_out(
                 state, nodes_temp, source_temp,
                 flow_temp, self.return_temp, timestep) +
                 checks['ts_discharge'] -
                 checks['ts_charge'])
-            # print tank_charge_left, 'tank_charge_left'
-            # print checks['ts_discharge'], 'discharge'
-            # print checks['ts_charge'], 'charge'
             if HP_increase > tank_charge_left:
                 # set all heat pump usage to zero
                 results['HP']['heat_total_output'] = 0.0
@@ -473,7 +458,6 @@ class FixedOrder(object):
                 results['aux']['demand'] = (
                     heat_demand -
                     results['TS']['discharging_total'])
-                # print results['aux']['demand'], 'aux_demand'
 
             else:
                 # add on charging from imports
@@ -612,7 +596,6 @@ class FixedOrder(object):
             # update new nodes temperatures
             # check if charging or discharging
             ts_match = round(checks['ts_charge'] - checks['ts_discharge'], 1)
-            # print ts_match
             if ts_match > 0:
                 state = 'charging'
             elif ts_match < 0:
@@ -688,34 +671,22 @@ class FixedOrder(object):
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
                    100.0 * hp_performance['duty'])
-        # print min_out, 'minimum_output'
-        # print min_out, 'minimum_output'
         hp_usage = results['HP']['heat_total_output']
-        # print hp_usage, 'hp_use'
 
         # need to change results if threshold not met
         if hp_usage < min_out and hp_usage > 0:
-            # print 'thershold not met'
             # new charge is the difference between
             # original hp usage and minimum output
             HP_increase = min_out - hp_usage
             # what if not enough space in thermal store
             # remove the existing charging/discharging
             state = 'charging'
-            # print state
-            # print nodes_temp
-            # print source_temp
-            # print flow_temp
-            # print self.return_temp
-            # print timestep
             tank_charge_left = (self.myHotWaterTank.max_energy_in_out(
                 state, nodes_temp, source_temp, flow_temp,
                 self.return_temp, timestep) +
                 checks['ts_discharge'] -
                 checks['ts_charge'])
-            # print tank_charge_left, 'tank_charge_left'
-            # print results['TS']['discharging_total'], 'discharge'
-            # print checks['ts_charge'], 'charge'
+            
             if HP_increase > tank_charge_left:
                 # set all heat pump usage to zero
                 results['HP']['heat_total_output'] = 0.0
@@ -775,7 +746,6 @@ class FixedOrder(object):
                 results['aux']['demand'] = (
                     heat_demand -
                     results['TS']['discharging_total'])
-                # print results['aux']['demand'], 'aux_demand'
 
             else:
                 # add on charging from imports
@@ -1205,7 +1175,6 @@ class FixedOrder(object):
             self.return_temp, timestep) - ts_discharge + ts_charge
         # minimum of two
         ts_discharge = min(heat_unmet, max_dis)
-        # print ts_discharge, 'discharging'
 
         return ts_discharge
 
@@ -1301,7 +1270,6 @@ class FixedOrder(object):
             state, nodes_temp, source_temp,
             flow_temp,
             self.return_temp, timestep) + ts_discharge - ts_charge
-        # print tank_charge_left, 'tank_charge_left'
         # charging of ts from heat pump
         ts_hp_charge_heat_imports = round(min(
             heat_pump_spare, tank_charge_left), 2)
@@ -1400,24 +1368,21 @@ class CheckFunctions(object):
 
     def heat_demand_check(self, timestep, heat_generated):
 
+        """Checks if the heat demand has been met
+
+        Args:
+            timestep: a float/int of the timestep to be modelled
+            heat_generated: the total heat generated up to that
+                point in the flow diagram to be checked
+
+        Returns:
+            boolean, TRUE if heat demand met, FALSE if heat demand not met
+       
+        Raises:
+            SystemExit if too much heat generated
         """
-        this is used to check if the heat demand has been met
-        PARAMETERS
-        timestep: a float/int of the timestep to be modelled
-        heat_generated: the total heat generated up to that
-        point in the flow diagram to be checked
-
-        RETURNS
-        boolean statement:
-            TRUE if heat demand met
-            FALSE if heat demand not met
-        exits program and returns a printed error if too much heat generated
-
-        """
-
         # get the heat demand
         heat_demand = self.heat_demand[timestep]
-        # print heat_demand, 'heat_demand'
 
         # checks how much heat demand still needs to be met
         heat_met = round(heat_demand, 2) - round(heat_generated, 2)
@@ -1430,30 +1395,22 @@ class CheckFunctions(object):
         elif heat_met > 0:
             return False
         # if < 0 then too much heat generated for some reason, throw error
-        # else:
-            # print 'Error in heat generation: Too much heat generated'
-            # raise SystemExit()
+        else:
+            msg = f'Error in heat generation: too much heat generated ({heat_met})'
+            LOG.error(msg)
+            raise SystemExit(msg)
 
     def surplus_check(self, surplus, RES_used):
+        """Checks if surplus exists at point in flow diagram
 
+        Args:
+            timestep: a float/int of the timestep to be modelled
+            surplus: total surplus in the timestep
+            RES_used: surplus used up to point in the flow diagram
+
+        Returns:
+            bool, TRUE if surplus exists, FALSE if surplus doesn't exist
         """
-        this is used to check if surplus exists at point in flow diagram
-
-        PARAMATERS
-
-        timestep: a float/int of the timestep to be modelled
-        surplus: total surplus in the timestep
-        RES_used: surplus used up to point in the flow diagram
-
-        RETURNS
-
-        boolean statement:
-            TRUE if surplus exists
-            FALSE if surplus doesnt exist
-        exits program and returns a printed error if too much RES has been used
-
-        """
-
         # calculates how much RES is leftover
         RES_leftover = round(surplus, 2) - round(RES_used, 2)
         RES_leftover = round(RES_leftover, 2)
@@ -1465,12 +1422,21 @@ class CheckFunctions(object):
         elif RES_leftover == 0.0:
             return False
         # if something else then error
-        # else:
-        #     print 'Error in RES usage: Too much RES used'
-        #     # raise SystemExit()
+        else:
+            msg = f'Error in RES usage: too much RES used ({RES_leftover})'
+            LOG.error(msg)
+            raise SystemExit(msg)
 
     def deficit_check(self, deficit, elec_supplied):
+        """Checks if deficit becomes surplus
 
+        Args:
+            deficit: total deficit in the timestep
+            elec_supplied: surplus used up to point in the flow diagram
+
+        Returns:
+            bool, TRUE if surplus exists, FALSE if surplus doesn't exist
+        """
         deficit_leftover = round(deficit, 2) - round(elec_supplied, 2)
         deficit_leftover = round(deficit_leftover, 2)
 
@@ -1481,6 +1447,7 @@ class CheckFunctions(object):
         elif deficit_leftover == 0:
             return False
         # if something else then error
-        # else:
-        #     print 'Error in program: Deficit turned into surplus'
-        #     # raise SystemExit()
+        else:
+            msg = f'Error in program: deficit turned into surplus ({deficit_leftover})'
+            LOG.error(msg)
+            raise SystemExit(msg)

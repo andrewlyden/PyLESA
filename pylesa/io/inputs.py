@@ -2,10 +2,11 @@
 
 reads input pickle files for use in other modules
 """
-
+import logging
 import os
 import pandas as pd
 
+LOG = logging.getLogger(__name__)
 
 class Inputs(object):
 
@@ -286,7 +287,6 @@ class Inputs(object):
         regression_data = data1.append([data2, data3, data4])
         regression_data = regression_data.dropna()
         regression_data = regression_data.reset_index(drop=True)
-        # print regression_data, 'rd'
 
         # note that ambient temp is column1 and flow is column 2
         X = regression_data.drop(

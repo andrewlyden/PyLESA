@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import time
 
@@ -5,6 +6,8 @@ from . import parametric_analysis
 from .controllers import fixed_order
 from .controllers import mpc
 from .io import inputs, outputs, read_excel
+
+LOG = logging.getLogger(__name__)
 
 def main(xlsxpath: str):
     """Run PyLESA, an open source tool capable of modelling local energy systems.
@@ -15,6 +18,7 @@ def main(xlsxpath: str):
     xlsxpath = Path(xlsxpath).resolve()
     if not xlsxpath.exists():
         msg = f"File {xlsxpath} does not exist"
+        LOG.error(msg)
         raise FileNotFoundError(msg)
     
     name = str(xlsxpath)
@@ -25,7 +29,7 @@ def main(xlsxpath: str):
     read_excel.run_all(name)
 
     # generate pickle inputs for parametric analysis
-    print('Generating inputs for all simuation combinations...')
+    LOG.info('Generating inputs for all simuation combinations...')
     myPara = parametric_analysis.Para(name)
     myPara.create_pickles()
     combinations = myPara.folder_name
@@ -34,7 +38,7 @@ def main(xlsxpath: str):
     t1 = time.time()
     tot_time = (t1 - t0)
 
-    print('Input complete. Time taken: ', round(tot_time, 2), 'seconds.')
+    LOG.info(f'Input complete. Time taken: {round(tot_time, 2)} seconds.')
 
     # just take first subname as controller is same in all
     subname = myPara.folder_name[0]
@@ -54,14 +58,14 @@ def main(xlsxpath: str):
 
         if controller == 'Fixed order control':
             # run fixed order controller
-            print('Running fixed order controller...')
+            LOG.info('Running fixed order controller...')
             fixed_order.FixedOrder(
                 name, subname).run_timesteps(
                     first_hour, timesteps)
 
         elif controller == 'Model predictive control':
             # run mpc controller
-            print('Running model predictive controller...')
+            LOG.info('Running model predictive controller...')
             myScheduler = mpc.Scheduler(
                 name, subname)
             pre_calc = myScheduler.pre_calculation(
@@ -70,9 +74,11 @@ def main(xlsxpath: str):
                 pre_calc, first_hour, timesteps)
 
         else:
-            raise Exception('Unsuitable controller chosen...')
+            msg = f'Unsuitable controller chosen: {controller}'
+            LOG.error(msg)
+            raise ValueError(msg)
 
-        print('Running output analysis...')
+        LOG.info('Running output analysis...')
         # run output analysis
         outputs.run_plots(name, subname)
 
@@ -80,13 +86,11 @@ def main(xlsxpath: str):
     outputs.run_KPIs(name)
     ty = time.time()
     tot_time = (ty - tx)
-    print('Time taken for running KPIs: ', round(tot_time, 2), 'seconds')
+    LOG.info(f'Time taken for running KPIs: {round(tot_time, 2)} seconds')
 
     t2 = time.time()
     tot_time = (t2 - t1) / 60
-
-    print('Simulations and outputs complete. Time taken: ', round(tot_time, 2), 'minutes')
+    LOG.info(f'Simulations and outputs complete. Time taken: {round(tot_time, 2)} minutes')
 
     tot_time = (t2 - t0) / 60
-
-    print('Run complete. Time taken: ', round(tot_time, 2), 'minutes')
+    LOG.info(f'Run complete. Time taken: {round(tot_time, 2)} minutes')

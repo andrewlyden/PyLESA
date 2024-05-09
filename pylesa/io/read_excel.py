@@ -2,16 +2,19 @@
 
 reads and then writes input pickle files
 """
-
+import logging
 import os
+from pathlib import Path
 import pickle
 import shutil
 import pandas as pd
 
+LOG = logging.getLogger(__name__)
 
 def run_all(excel_file_name):
-    print('Reading excel...')
-    myInput = Input(excel_file_name)
+    excel_path = Path(excel_file_name).resolve()
+    LOG.info(f'Reading MS Excel file: {excel_path.name}')
+    myInput = Input(str(excel_path))
 
     myInput.parametric_analysis()
     myInput.controller()
@@ -33,7 +36,7 @@ def run_all(excel_file_name):
     with open(file, 'wb') as handle:
         pickle.dump(myInput.container, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print('Excel sheet read complete')
+    LOG.info(f'Completed reading MS Excel file: {excel_path.name}')
 
 
 class Input(object):
@@ -165,12 +168,6 @@ class Input(object):
         self.container['heating'] = dem
 
     def demand_input(self):
-
-        # df = self.excel_sheets
-        # print(df)
-        # with open('temp.pkl', 'wb') as output_file:
-        #     pickle.dump(df, output_file, protocol=pickle.HIGHEST_PROTOCOL)
-
         df = self.excel_sheets['Demand input']
 
         temp_return = df['Unnamed: 8'][4]

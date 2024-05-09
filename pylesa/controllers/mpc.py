@@ -279,8 +279,6 @@ class Scheduler(object):
         # electrical storage parameters
         # max capacity
         max_cap_ES = m.Const(self.myElectricalStorage.capacity)
-        # print(max_cap_ES.value)
-        # print(prev_result['soc_ES'])
         max_charge_ES = m.Const(self.myElectricalStorage.charge_max)
         max_discharge_ES = m.Const(self.myElectricalStorage.discharge_max)
         charge_eff = m.Const(self.myElectricalStorage.charge_eff)
@@ -400,26 +398,6 @@ class Scheduler(object):
 
         m.solve(disp=False)
 
-        # print hour
-        # print HP_status[1], 'status'
-        # print HP_min[1], 'min'
-        # print HPt[1], 'HPt'
-        # print HPtrs[1], 'HPtrs'
-        # print HPtrd[1], 'HPtrd'
-        # print HPtis[1], 'HPtis'
-        # print HPtid[1], 'HPtid'
-        # print aux[1], 'aux'
-        # print aux_rs[1], 'aux res store'
-        # print aux_rd[1], 'aux res dem'
-        # print aux_d[1], 'aux_d'
-        # print aux_s[1], 'aux_s'
-        # print TSc[1], 'TSc'
-        # print max_charge[1], 'max_charge'
-        # print TSd[1], 'TSd'
-        # print soc[1], 'soc'
-        # print hd[1], 'hd'
-        # print IC[1], 'import_price'
-
         h = 1
 
         TSc_ = round(TSc[h] - TSd[h], 2)
@@ -465,8 +443,6 @@ class Scheduler(object):
                 final_nodes_temp = next_nodes_temp[-1]
 
         # final_nodes_temp = [round(elem, 2) for elem in final_nodes_temp]
-        # print prev_result['final_nodes_temp'], 'prev_result'
-        # print final_nodes_temp
 
         # results are for the second timestep
         timestep = hour + 1
@@ -487,7 +463,6 @@ class Scheduler(object):
         results['RES']['HP'] = (
             (HPtrd[h] + HPtrs[h]) /
             hp_performance[timestep]['cop'])
-        # print results['RES']['HP']
         if self.myAux.fuel == 'Electric':
             results['RES']['aux'] = aux_rd[h] + aux_rs[h]
         results['RES']['export'] = export[h]
@@ -622,32 +597,6 @@ class Scheduler(object):
             'ESd': ESd[h], 'ESd_ed': ESd_ed[h], 'ESd_hp': ESd_hp[h],
             'ESd_aux': ESd_aux[h],
             'imp_ed': imp_ed[h], 'RES_ed': RES_ed[h]}
-
-        # print results
-
-        # print hd.value, 'hd'
-        # print HPt.value, 'HPt'
-        # print duty.value, 'duty'
-        # print cop.value, 'cop'
-        # print aux.value, 'aux'
-        # print TSc.value, 'charging'
-        # print TSd.value, 'discharging'
-        # print soc.value, 'soc'
-        # print IC.value, 'import cost'
-        # print aux_cost.value, 'auxiliary cost'
-        # print HPtrd.value, 'heat pump renewable to demand'
-        # print HPtrs.value, 'heat pump renewable to storage'
-        # print cop.value, 'cop'
-        # print max_charge.value, 'max charge'
-        # print final_nodes_temp, 'final_nodes_temp'
-        # print HPtrs.value, 'HPtrs'
-        # print HP_left.value, 'heat pump capacity left'
-        # print max_charge.value, 'max charge available'
-        # print HPtrd.value, 'HPtrd'
-        # print HPtrd_max.value, 'HPtrd_max'
-        # print surplus[first_hour:final_hour].values, 'surplus'
-        # print cop.value, 'cop'
-        # print duty.value, 'duty'
 
         # Plot solution
         # plt.figure()
@@ -824,16 +773,7 @@ class Scheduler(object):
         #         state.append(0)
 
         # surplus = pre_calc['surplus']
-        # print timesteps, 'timesteps'
-        # print first_hour, 'first'
-        # print final_hour, 'last'
         # hd = self.heat_demand[first_hour:final_hour]
-
-        # print TSc, 'TSc'
-        # print TSd, 'TSd'
-        # print hd.values, 'hd'
-        # print HPt, 'HPt'
-        # print aux, 'aux'
 
         # HPt = []
         # cop = []

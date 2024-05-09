@@ -2,12 +2,13 @@
 
 useful functions which are used throughout
 """
-
+import logging
 import pandas as pd
 
 import pickle
 from collections import OrderedDict
 
+LOG = logging.getLogger(__name__)
 
 def inputs_path():
     pickle_in = open("dic_path.pkl", "rb")
@@ -162,13 +163,10 @@ class CheckFunctions(object):
         boolean statement:
             TRUE if heat demand met
             FALSE if heat demand not met
-        exits program and returns a printed error if too much heat generated
-
         """
 
         # get the heat demand
         heat_demand = self.heat_demand[timestep]
-        # print heat_demand, 'heat_demand'
 
         # checks how much heat demand still needs to be met
         heat_met = round(heat_demand, 2) - round(heat_generated, 2)
@@ -182,8 +180,9 @@ class CheckFunctions(object):
             return False
         # if < 0 then too much heat generated for some reason, throw error
         # else:
-            # print 'Error in heat generation: Too much heat generated'
-            # raise SystemExit()
+            # msg = 'Error in heat generation: Too much heat generated'
+            # LOG.error(msg)
+            # raise SystemExit(msg)
 
     def surplus_check(self, surplus, RES_used):
 
@@ -201,8 +200,6 @@ class CheckFunctions(object):
         boolean statement:
             TRUE if surplus exists
             FALSE if surplus doesnt exist
-        exits program and returns a printed error if too much RES has been used
-
         """
 
         # calculates how much RES is leftover
@@ -217,8 +214,9 @@ class CheckFunctions(object):
             return False
         # if something else then error
         # else:
-        #     print 'Error in RES usage: Too much RES used'
-        #     # raise SystemExit()
+        #     msg = 'Error in RES usage: Too much RES used'
+        #     LOG.error(msg)
+        #     raise SystemExit(msg)
 
     def deficit_check(self, deficit, elec_supplied):
 
@@ -233,5 +231,6 @@ class CheckFunctions(object):
             return False
         # if something else then error
         # else:
-        #     print 'Error in program: Deficit turned into surplus'
-        #     # raise SystemExit()
+        #     msg = 'Error in program: Deficit turned into surplus'
+        #     LOG.error(msg)
+        #     raise SystemExit(msg)
