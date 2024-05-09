@@ -284,7 +284,7 @@ class Inputs(object):
         df4 = pd.DataFrame(data=dic4)
         data4 = pd.concat([regression4, df4], axis=1)
 
-        regression_data = data1.append([data2, data3, data4])
+        regression_data = pd.concat([data1, data2, data3, data4], ignore_index=True)
         regression_data = regression_data.dropna()
         regression_data = regression_data.reset_index(drop=True)
 
