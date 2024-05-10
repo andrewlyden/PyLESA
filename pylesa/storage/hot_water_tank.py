@@ -52,6 +52,7 @@ class HotWaterTank(object):
         self.insulation = str(insulation).lower().strip()
         self.location = str(location).lower().strip()
         self.number_nodes = number_nodes
+        self.node_list = list(range(self.number_nodes))
 
         # dic inputs
         self.dimensions = dimensions
@@ -74,10 +75,14 @@ class HotWaterTank(object):
             # Use importlib.resources to manage files required by package
             ifiles('pylesa').joinpath('data', 'water_spec_heat.pkl')
         )
+        # stored in j/kg deg
+        self.cp = {
+            temp: cp * 1000 for (temp, cp) in zip(self.cp_spec['t'], self.cp_spec['Cp'])
+        }
 
     def init_temps(self, initial_temp):
         nodes_temp = []
-        for node in range(self.number_nodes):
+        for _ in range(self.number_nodes):
             nodes_temp.append(initial_temp)
         return nodes_temp
 
@@ -117,13 +122,9 @@ class HotWaterTank(object):
             float -- cp of water at given temp - j/(kg deg C)
         """
         # input temp must be between 0 and 100 deg
-
         if isinstance(temp, (int, float)) and temp > 0.:
-
-            df = self.cp_spec
             T = round(float(temp), -1)
-            # convert j/g deg to j/kg deg
-            cp = df['Cp'][T / 10] * 1000
+            cp = self.cp[T]
 
         else:
             cp = 4180
@@ -168,7 +169,7 @@ class HotWaterTank(object):
             raise ValueError(msg)
         return ambient_temp
 
-    def discharging_function(self, state, nodes_temp, flow_temp):
+    def discharging_function(self, state, nodes_temp, flow_temp, node = None):
 
         # total nodes is the number of nodes being modelled
         # nodes_temp is a dict of the nodes and their temperatures
@@ -176,9 +177,12 @@ class HotWaterTank(object):
         # back into the storage
 
         total_nodes = self.number_nodes
-        node_list = range(total_nodes)
         function = {}
-        # bottom_node = total_nodes - 1
+        
+        if node is not None:
+            node_list = [node]
+        else:
+            node_list = self.node_list
 
         if state == 'discharging':
 
@@ -214,7 +218,6 @@ class HotWaterTank(object):
                                 return_temp, flow_temp):
 
         total_nodes = self.number_nodes
-        node_list = range(total_nodes)
         function = {}
         bottom_node = total_nodes - 1
 
@@ -225,7 +228,7 @@ class HotWaterTank(object):
 
         if 1 in df_list:
 
-            for node in node_list:
+            for node in self.node_list:
 
                 # this asks if we are looking at the bottom node
                 if node == bottom_node and nodes_temp[0] >= flow_temp:
@@ -238,12 +241,12 @@ class HotWaterTank(object):
                     function[node] = 0
 
         else:
-            for node in node_list:
+            for node in self.node_list:
                 function[node] = 0
 
         return function
 
-    def charging_function(self, state, nodes_temp, source_temp):
+    def charging_function(self, state, nodes_temp, source_temp, node = None):
 
         # this determines which node recieves the charging water
 
@@ -254,8 +257,13 @@ class HotWaterTank(object):
         # if the in mass exceeds the node volume then next node also charged
 
         total_nodes = self.number_nodes
-        node_list = range(total_nodes)
         function = {}
+
+        if node is not None:
+            node_list = [node]
+        else:
+            node_list = self.node_list
+
         if state == 'charging':
 
             for node in node_list:
@@ -491,7 +499,7 @@ class HotWaterTank(object):
         # correction factors
         Fi = self.correction_factors['insulation_factor']
         Fe = self.correction_factors['overall_factor']
-        Fd = self.discharging_function(state, nodes_temp, flow_temp)[node]
+        Fd = self.discharging_function(state, nodes_temp, flow_temp, node)[node]
         mf = self.mixing_function(state, node, nodes_temp,
                                   source_temp, flow_temp)
         Fco = self.charging_top_node(state)[node]
@@ -546,7 +554,7 @@ class HotWaterTank(object):
         Fi = self.correction_factors['insulation_factor']
         Fe = self.correction_factors['overall_factor']
 
-        Fc = self.charging_function(state, nodes_temp, source_temp)[node]
+        Fc = self.charging_function(state, nodes_temp, source_temp, node)[node]
         Fdi = self.discharging_bottom_node(
             state, nodes_temp, return_temp, flow_temp)[node]
         Ta = self.amb_temp(timestep)
@@ -710,7 +718,7 @@ class HotWaterTank(object):
         Fi = self.correction_factors['insulation_factor']
         Fe = self.correction_factors['overall_factor']
 
-        Fd = self.discharging_function(state, nodes_temp, flow_temp)[node]
+        Fd = self.discharging_function(state, nodes_temp, flow_temp, node)[node]
         mf = self.mixing_function(state, node, nodes_temp,
                                   source_temp, flow_temp)
 
