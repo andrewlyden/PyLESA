@@ -4,25 +4,25 @@ runs the control strategy MPC
 """
 import logging
 from gekko import GEKKO
+from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 import pickle
-import os
 
 from .. import initialise_classes, tools
 from ..io import inputs
+from ..constants import OUTDIR
 
 LOG = logging.getLogger(__name__)
 
 class Scheduler(object):
 
-    def __init__(self, name, subname):
+    def __init__(self, root: Path, subname: str):
 
-        self.name = name
+        self.root = Path(root).resolve()
         self.subname = subname
 
-        classes = initialise_classes.init(name, subname)
+        classes = initialise_classes.init(self.root, subname)
 
         self.myUserWindturbine = classes['myUserWindturbine']
         self.myDatabaseWindturbine = classes['myDatabaseWindturbine']
@@ -32,7 +32,7 @@ class Scheduler(object):
         self.myElectricalStorage = classes['myElectricalStorage']
         self.myAux = classes['myAux']
 
-        myInputs = inputs.Inputs(name, subname)
+        myInputs = inputs.Inputs(self.root, subname)
         self.horizon = myInputs.controller()['horizon']
 
         dem = myInputs.demands()
@@ -833,9 +833,7 @@ class Scheduler(object):
         # plt.show()
 
         # write the outputs to a pickle
-        file = os.path.join(
-            os.path.dirname(__file__), '..', 'outputs',
-            self.name[:-5], self.subname, 'outputs.pkl')
+        file = self.root / OUTDIR / self.subname / 'outputs.pkl'
         with open(file, 'wb') as output_file:
             pickle.dump(results, output_file,
                         protocol=pickle.HIGHEST_PROTOCOL)

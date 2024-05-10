@@ -22,19 +22,22 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-4. Define and gather data on the local energy system to be modelled including resources, demands, supply, storage, grid connection, and control strategy. Define the increments and ranges to be modelled within the required parametric design. Input all this data using one of the template Excel Workbooks from the 'inputs' folder.
+4. Define and gather data on the local energy system to be modelled including resources, demands, supply, storage, grid connection, and control strategy. Define the increments and ranges to be modelled within the required parametric design. Input all this data using one of the template Excel Workbooks from the [inputs](./inputs) folder.
 
-5. Optionally run the demand (heat_demand.py and electricity_demand.py) and resource assessment methods (see PhD thesis for details) to generate hourly profiles depending on available data. Input generated profiles into the Excel Workbook.
+5. Optionally run the demand ([heat_demand.py](./pylesa/demand/heat_demand.py) and [electricity_demand.py](./pylesa/demand/electricity_demand.py)) and resource assessment methods (see PhD thesis for details) to generate hourly profiles depending on available data. Input generated profiles into the Excel Workbook.
 
 6. Using a terminal (e.g. PowerShell) within the clone of the `PyLESA` git repo, run:
 
 ```python
 source venv/bin/activate
 python -m pylesa --help # to display help messages
-python -m pylesa ./inputs/{name of Excel input file}.xlsx
+python -m pylesa ./inputs/{name of Excel input file}.xlsx my/existing/output/directory --overwrite
 ```
 
-7. After the run is complete, open the Outputs folder to view the KPI 3D plots and/or operational graphs, as well as .csv outputs. (Note an error will be raised if only one simulation combination is run, as 3D plots cannot be processed.) There are also raw outputs.pkl file for each simulation combination which contains a vast range of raw outputs.
+Running `python -m pylesa --help` will display the following help message:
+![pylesa usage](./img/pylesa_usage.png)
+
+7. After the run is complete, open the outpus folder in your chosen run directory to view the KPI 3D plots and/or operational graphs, as well as .csv outputs. (Note an error will be raised if only one simulation combination is run, as 3D plots cannot be processed). There are also raw outputs.pkl files for each simulation combination which contains a vast range of raw outputs.
 
 A video discussing how to run `PyLESA` is available here: https://youtu.be/QsJut9ftCT4
 

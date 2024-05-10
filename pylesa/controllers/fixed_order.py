@@ -8,27 +8,27 @@ the fixed order control contains a set order of operations
 which are followed
 """
 import logging
-import os
 import pandas as pd
+from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 import pickle
 
 from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 
 from .. import initialise_classes
 from ..io import inputs
+from ..constants import OUTDIR
 
 LOG = logging.getLogger(__name__)
 
 class FixedOrder(object):
 
-    def __init__(self, name, subname):
+    def __init__(self, root: Path, subname: str):
 
-        self.name = name
+        self.root = Path(root).resolve()
         self.subname = subname
 
-        classes = initialise_classes.init(name, subname)
+        classes = initialise_classes.init(self.root, subname)
         self.myUserWindturbine = classes['myUserWindturbine']
         self.myDatabaseWindturbine = classes['myDatabaseWindturbine']
         self.myPV = classes['myPV']
@@ -37,7 +37,7 @@ class FixedOrder(object):
         self.myElectricalStorage = classes['myElectricalStorage']
         self.myAux = classes['myAux']
 
-        myInputs = inputs.Inputs(name, subname)
+        myInputs = inputs.Inputs(self.root, subname)
 
         dem = myInputs.demands()
         self.source_temp = dem['source_temp']
@@ -218,9 +218,7 @@ class FixedOrder(object):
         # plt.show()
 
         # write the outputs to a pickle
-        file = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'outputs',
-            self.name[:-5], self.subname, 'outputs.pkl')
+        file = self.root / OUTDIR / self.subname / 'outputs.pkl'
         with open(file, 'wb') as output_file:
             pickle.dump(results, output_file,
                         protocol=pickle.HIGHEST_PROTOCOL)

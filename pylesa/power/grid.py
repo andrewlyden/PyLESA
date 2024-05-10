@@ -3,6 +3,7 @@
 from importlib.resources import files as ifiles
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
 
@@ -14,7 +15,7 @@ plt.style.use('ggplot')
 
 class Grid(object):
 
-    def __init__(self, name, subname, export,
+    def __init__(self, root, subname, export,
                  tariff_choice, balancing_mechanism, grid_services,
                  flat_rate=None, variable_periods=None,
                  variable_periods_year=None,
@@ -24,7 +25,7 @@ class Grid(object):
                  lower_penalty=None, higher_discount=None):
 
         self.export = export
-        self.name = name
+        self.root = Path(root).resolve()
         self.subname = subname
         self.tariff_choice = tariff_choice
         self.balancing_mechanism = balancing_mechanism
@@ -65,7 +66,7 @@ class Grid(object):
 
     def wind_farm_info(self):
 
-        myInputs = inputs.Inputs(self.name, self.subname)
+        myInputs = inputs.Inputs(self.root, self.subname)
         input_windturbine = myInputs.wind_farm()
         input_weather = myInputs.wind_farm_weather()
 
@@ -139,23 +140,6 @@ class Grid(object):
         for x in range(hour2 - hour1):
             ub.append(higher_band)
 
-        # # Plot solution
-        # t = range(hour2 - hour1)
-        # plt.figure()
-        # plt.subplot(2, 1, 1)
-        # plt.plot(t, power[hour1:hour2].values, 'r', linewidth=2)
-        # plt.plot(t, lb, 'g', linewidth=2)
-        # plt.plot(t, ub, 'b', linewidth=2)
-        # plt.ylabel('Wind farm')
-        # plt.legend(['output', 'lb', 'ub'], loc='best')
-        # plt.subplot(2, 1, 2)
-        # plt.plot(t, new_tou[hour1:hour2], 'r', linewidth=2)
-        # plt.plot(t, fr[hour1:hour2], 'g', linewidth=2)
-        # plt.legend(['wind_ppa', 'no_wind_ppa'], loc='best')
-        # plt.ylabel('Prices pound/MWh')
-        # plt.xlabel('Time')
-        # plt.show()
-
         return new_tou
 
     def variable_periods_series(self):
@@ -218,23 +202,6 @@ class Grid(object):
         for x in range(hour2 - hour1):
             ub.append(higher_band)
 
-        # Plot solution
-        # t = range(hour2 - hour1)
-        # plt.figure()
-        # plt.subplot(2, 1, 1)
-        # plt.plot(t, power[hour1:hour2].values, 'r', linewidth=2)
-        # plt.plot(t, lb, 'g', linewidth=2)
-        # plt.plot(t, ub, 'b', linewidth=2)
-        # plt.ylabel('Wind farm')
-        # plt.legend(['output', 'lb', 'ub'], loc='best')
-        # plt.subplot(2, 1, 2)
-        # plt.plot(t, new_tou[hour1:hour2], 'r', linewidth=2)
-        # plt.plot(t, vp[hour1:hour2], 'g', linewidth=2)
-        # plt.legend(['wind_ppa', 'no_wind_ppa'], loc='best')
-        # plt.ylabel('Prices pound/MWh')
-        # plt.xlabel('Time')
-        # plt.show()
-
         return new_tou
 
     def tou_wm_series(self):
@@ -290,23 +257,6 @@ class Grid(object):
         ub = []
         for x in range(hour2 - hour1):
             ub.append(higher_band)
-
-        # # Plot solution
-        # t = range(hour2 - hour1)
-        # plt.figure()
-        # plt.subplot(2, 1, 1)
-        # plt.plot(t, power[hour1:hour2].values, 'r', linewidth=2)
-        # plt.plot(t, lb, 'g', linewidth=2)
-        # plt.plot(t, ub, 'b', linewidth=2)
-        # plt.ylabel('Wind farm')
-        # plt.legend(['output', 'lb', 'ub'], loc='best')
-        # plt.subplot(2, 1, 2)
-        # plt.plot(t, new_tou[hour1:hour2], 'r', linewidth=2)
-        # plt.plot(t, tou[hour1:hour2], 'g', linewidth=2)
-        # plt.legend(['wind_ppa', 'no_wind_ppa'], loc='best')
-        # plt.ylabel('Prices pound/MWh')
-        # plt.xlabel('Time')
-        # plt.show()
 
         return new_tou
 

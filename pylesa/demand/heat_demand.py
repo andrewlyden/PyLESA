@@ -2,12 +2,14 @@
 """
 from importlib.resources import files as ifiles
 import logging
-import os
 import pandas as pd
+from pathlib import Path
 import numpy as np
 import pickle
 
 import matplotlib.pyplot as plt
+
+from ..constants import INDIR
 
 LOG = logging.getLogger(__name__)
 
@@ -156,11 +158,9 @@ def scaled_day_profile(type1, age, bedrooms, temp):
     return scaled_prod
 
 
-def average_day_temperature(name, subname):
-
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "inputs", name[:-5], subname)
-    file2 = os.path.join(path, "resources.pkl")
+def average_day_temperature(root: Path, subname: str):
+    root = Path(root).resolve()
+    file2 = root / INDIR / subname / "resources.pkl"
     resources = pd.read_pickle(file2)
     ambient_temp = resources['air_temperature']
 
@@ -172,14 +172,12 @@ def average_day_temperature(name, subname):
     return df
 
 
-def profiles_from_inputs(name, subname):
-
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "inputs", name[:-5], subname)
-    file1 = os.path.join(path, "heating.pkl")
+def profiles_from_inputs(root: Path, subname: str):
+    root = Path(root).resolve()
+    file1 = root / INDIR / subname / "heating.pkl"
     heating = pd.read_pickle(file1)
 
-    avt = average_day_temperature(name, subname)
+    avt = average_day_temperature(root, subname)
 
     profiles = []
     number_profiles = len(heating)
@@ -204,13 +202,11 @@ def profiles_from_inputs(name, subname):
     return profiles
 
 
-def hot_water_addition(name, subname):
-
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "inputs", name[:-5], subname)
-    file1 = os.path.join(path, "hot_water.pkl")
+def hot_water_addition(root: Path, subname: str):
+    root = Path(root).resolve()
+    file1 = root / INDIR / subname / "hot_water.pkl"
     hot_water = pd.read_pickle(file1)
-    file2 = os.path.join(path, "heating.pkl")
+    file2 = root / INDIR / subname / "heating.pkl"
     heating = pd.read_pickle(file2)
 
     number_profiles = len(heating)

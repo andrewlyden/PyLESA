@@ -4,10 +4,10 @@ Modelling a heat pump with modelling approaches of
 simple, lorentz, generic regression, and standard test regression
 
 """
-import os
 import math
 import logging
 import pandas as pd
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -27,9 +27,9 @@ WSHP = "WSHP"
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 22})
 
-def perf(name, subname):
-
-    myInputs = inputs.Inputs(name, subname)
+def perf(root: Path, subname: str):
+    root = Path(root).resolve()
+    myInputs = inputs.Inputs(root, subname)
     input_weather = myInputs.weather()
     inputs_basics = myInputs.heatpump_basics()
     modelling_approach = inputs_basics['modelling_approach']
@@ -619,169 +619,3 @@ class StandardTestRegression(object):
         pred_duty = model.predict(x_pred_new)
 
         return float(pred_duty[:, 0])
-
-    def graphs(self):
-        """OLD testing of how to do regression analysis
-
-        includes input method, regression, graphing
-        """
-
-        path = t.inputs_path()
-        file1 = os.path.join(path['folder_path'], "regression1.pkl")
-        regression1 = pd.read_pickle(file1)
-
-        path = t.inputs_path()
-        file1a = os.path.join(path['folder_path'], "regression_temp1.pkl")
-        regression_temp1 = pd.read_pickle(file1a)
-
-        dic = {'flow_temp': [regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0],
-                            regression_temp1['flow_temp'][0]]}
-        df = pd.DataFrame(data=dic)
-        data1 = pd.concat([regression1, df], axis=1)
-
-        path = t.inputs_path()
-        file2 = os.path.join(path['folder_path'], "regression2.pkl")
-        regression2 = pd.read_pickle(file2)
-
-        path = t.inputs_path()
-        file2a = os.path.join(path['folder_path'], "regression_temp2.pkl")
-        regression_temp2 = pd.read_pickle(file2a)
-
-        dic2 ={'flow_temp': [regression_temp2['flow_temp'][0], 
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0],
-                    regression_temp2['flow_temp'][0]]}
-        df2 = pd.DataFrame(data=dic2)
-        data2 = pd.concat([regression2, df2], axis=1)
-
-        path = t.inputs_path()
-        file3 = os.path.join(path['folder_path'], "regression3.pkl")
-        regression3 = pd.read_pickle(file3)
-
-        path = t.inputs_path()
-        file3a = os.path.join(path['folder_path'], "regression_temp3.pkl")
-        regression_temp3 = pd.read_pickle(file3a)
-
-        dic3 ={'flow_temp': [regression_temp3['flow_temp'][0], 
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0],
-                    regression_temp3['flow_temp'][0]]}
-        df3 = pd.DataFrame(data=dic3)
-        data3 = pd.concat([regression3, df3], axis=1)
-
-        path = t.inputs_path()
-        file4 = os.path.join(path['folder_path'], "regression4.pkl")
-        regression4 = pd.read_pickle(file4)
-
-        path = t.inputs_path()
-        file4a = os.path.join(path['folder_path'], "regression_temp4.pkl")
-        regression_temp4 = pd.read_pickle(file4a)
-
-        dic4 ={'flow_temp': [regression_temp4['flow_temp'][0], 
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0],
-                    regression_temp4['flow_temp'][0]]}
-        df4 = pd.DataFrame(data=dic4)
-        data4 = pd.concat([regression4, df4], axis=1)
-
-        regression_data = pd.concat([data1, data2, data3, data4], ignore_index=True)
-        regression_data = regression_data.dropna()
-        regression_data = regression_data.reset_index(drop=True)
-
-        #note that ambient temp is column1 and flow_temp is column 2
-        X = regression_data.drop(columns=['duty', 'capacity_percentage', 'COSP'])
-
-        Y_COSP = regression_data.drop(columns=['duty', 'capacity_percentage', 'flow_temp', 'ambient_temp'])
-        Y_duty = regression_data.drop(columns=['COSP', 'capacity_percentage', 'flow_temp', 'ambient_temp'])
-
-        poly = PolynomialFeatures(degree=2, include_bias=False)
-        X_new = poly.fit_transform(X)
-        Y_COSP_new = poly.fit_transform(Y_COSP)
-
-        model_cop = LinearRegression()
-        model_cop.fit(X_new, Y_COSP_new)
-
-        model_duty = LinearRegression()
-        model_duty.fit(X_new, Y_duty)
-
-        x_ambient = np.linspace(-20,20,num=100)
-        df1 = pd.DataFrame(data=x_ambient)
-
-        x_flow_temp = np.array([50, 55, 60, 65, 70, 75, 80])
-        df2 = pd.DataFrame(data=x_flow_temp)
-
-        f_t = []
-        am = []
-
-        for x in range(0, len(x_flow_temp)):
-            for y in range(0, len(x_ambient)):
-                f_t.append(x_flow_temp[x])
-                am.append(x_ambient[y])
-
-        df3 = pd.DataFrame(data=f_t)
-        df3 = df3.rename(columns= {0:'flow_temp'})
-
-        df4 = pd.DataFrame(data=am)
-        df4 = df4.rename(columns= {0:'ambient_temp'})
-
-        x_test = pd.concat([df4, df3], axis=1)
-        x_test_new = poly.fit_transform(x_test)
-
-        pred_cop = model_cop.predict(x_test_new)
-        pred_duty = model_duty.predict(x_test_new)
-
-        fileout = os.path.join(os.path.dirname(__file__), '..', 'outputs', 'heatpump', 'regression_analysis.pdf')
-        pp = PdfPages(fileout)
-
-        dfs = []
-        for x in range(0, len(df2)):
-            y1 = x * len(df1)
-            y2 = (x+1) * len(df1)
-            dfs.append(pred_cop[y1:y2])
-
-        fig, ax = plt.subplots()
-
-        for x in range(0, len(df2)):
-            ax.plot(df1, dfs[x][:,0], label = df2[0][x])
-        ax.legend(title = 'Flow temperatures')
-        ax.scatter(X['ambient_temp'], Y_COSP['COSP'])
-        plt.xlabel('Ambient temp')
-        plt.ylabel('COSP')
-        pp.savefig(bbox_inches='tight')
-
-        dfs2 = []
-        for x in range(0, len(df2)):
-            y1 = x * len(df1)
-            y2 = (x+1) * len(df1)
-            dfs2.append(pred_duty[y1:y2])
-
-        fig, ax = plt.subplots()
-
-        for x in range(0, len(df2)):
-            ax.plot(df1, dfs2[x][:,0], label = df2[0][x])
-        ax.legend(title = 'Flow temperatures')
-        ax.scatter(X['ambient_temp'], Y_duty['duty'])
-        plt.xlabel('Ambient temp')
-        plt.ylabel('duty (kW)')
-        pp.savefig(bbox_inches='tight')
-
-        pp.close()
-        return

@@ -3,18 +3,19 @@
 reads input pickle files for use in other modules
 """
 import logging
-import os
+from pathlib import Path
 import pandas as pd
+
+from ..constants import INDIR
 
 LOG = logging.getLogger(__name__)
 
 class Inputs(object):
 
-    def __init__(self, name, subname):
-
-        self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "inputs", name[:-5], subname + '.pkl')
-        self.container = pd.read_pickle(self.folder_path)
+    def __init__(self, root: Path, subname: str):
+        self.container = pd.read_pickle(
+            Path(root).resolve() / INDIR / (subname + '.pkl')
+        )
 
     def controller(self):
 

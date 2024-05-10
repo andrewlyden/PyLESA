@@ -1,13 +1,16 @@
 """generating electrical demand profile from elexon profiles
 """
 from importlib.resources import files as ifiles
-import os
 import pandas as pd
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from ..constants import INDIR
+
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 18})
+
 
 
 def import_elexon_profile():
@@ -92,11 +95,8 @@ def year_time_series(year):
     return demand
 
 
-def profile_from_input(year, name, subname):
-
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "inputs", name[:-5], subname)
-    file1 = os.path.join(path, "heating.pkl")
+def profile_from_input(year: int, root: Path, subname: str):
+    file1 = Path(root).resolve() / INDIR / subname / "heating.pkl"
     heating = pd.read_pickle(file1)
 
     standard_profile = year_time_series(year)

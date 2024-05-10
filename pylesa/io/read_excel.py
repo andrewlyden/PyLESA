@@ -3,18 +3,27 @@
 reads and then writes input pickle files
 """
 import logging
-import os
 from pathlib import Path
 import pickle
 import shutil
 import pandas as pd
 
+from .paths import valid_fpath
+from ..constants import INDIR, OUTDIR
+
 LOG = logging.getLogger(__name__)
 
-def run_all(excel_path):
-    excel_path = Path(excel_path).resolve()
-    LOG.info(f'Reading MS Excel file: {excel_path.name}')
-    myInput = Input(str(excel_path))
+def read_inputs(xlsxpath: str | Path, root: Path) -> None:
+    """Read all inputs from MS Excel workbook and setup directories
+    
+    Args:
+        xlsxpath: path to MS Excel workbook containing inputs
+        root: path to directory to store intermediary inputs and outputs
+    """
+    xlsxpath = valid_fpath(xlsxpath)
+    LOG.info(f'Reading MS Excel file: {xlsxpath.name}')
+    root = Path(root).resolve()
+    myInput = XlsxInput(xlsxpath, root)
 
     myInput.parametric_analysis()
     myInput.controller()
@@ -31,52 +40,42 @@ def run_all(excel_path):
     myInput.heat_pump()
 
     # write to pickle file
-    file = os.path.join(
-        os.path.dirname(__file__), "..", "inputs", myInput.name[:-5], 'inputs.pkl')
+    file = root / INDIR / 'inputs.pkl'
     with open(file, 'wb') as handle:
         pickle.dump(myInput.container, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    LOG.info(f'Completed reading MS Excel file: {excel_path.name}')
+    LOG.info(f'Completed reading MS Excel file: {xlsxpath.name}')
 
 
-class Input(object):
+class XlsxInput(object):
 
-    def __init__(self, name):
+    def __init__(self, xlsxpath: Path, root: Path):
 
         # name of excel sheet
-        self.name = name
+        self.xlsxpath = Path(xlsxpath).resolve()
+        self.root = Path(root).resolve()
 
         # data containter
         self.container = {}
 
         # path to folder for inputs
-        self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name[:-5])
-        if os.path.isdir(self.folder_path) is False:
-            os.mkdir(self.folder_path)
-        elif os.path.isdir(self.folder_path) is True:
+        self.folder_path = self.root / INDIR
+        if self.folder_path.is_dir() is False:
+            self.folder_path.mkdir()
+        elif self.folder_path.is_dir() is True:
             shutil.rmtree(self.folder_path)
-            os.mkdir(self.folder_path)
+            self.folder_path.mkdir()
 
         # read excel sheet
-        file_path = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name)
-        self.excel_sheets = pd.read_excel(file_path, sheet_name=None)
+        self.excel_sheets = pd.read_excel(xlsxpath, sheet_name=None)
 
         # create outputs folder
-        out_path = os.path.join(
-            os.path.dirname(__file__), "..", "outputs", name[:-5])
-        if os.path.isdir(out_path) is False:
-            os.mkdir(out_path)
-        elif os.path.isdir(out_path) is True:
+        out_path = self.root / OUTDIR
+        if out_path.is_dir() is False:
+            out_path.mkdir()
+        elif out_path.is_dir() is True:
             shutil.rmtree(out_path)
-            os.mkdir(out_path)
-
-        # # creates pickle with folder path
-        # p = self.folder_path
-        # file = 'folder_path.pkl'
-        # with open(file, 'wb') as output_file:
-        #     pickle.dump(p, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+            out_path.mkdir()
 
     def parametric_analysis(self):
 
@@ -282,9 +281,6 @@ class Input(object):
         self.container['wind_farm_resources'] = df
 
     def electrical_storage(self):
-        # df = self.excel_sheets
-        # with open('temp.pkl', 'wb') as output_file:
-        #     pickle.dump(df, output_file, protocol=pickle.HIGHEST_PROTOCOL)
         df = self.excel_sheets['Electrical storage']
 
         df = df.drop(columns=['Unnamed: 0', 'Unnamed: 1'],
@@ -302,9 +298,6 @@ class Input(object):
         self.container['electrical_storage'] = df
 
     def grid(self):
-        # df = self.excel_sheets
-        # with open('temp.pkl', 'wb') as output_file:
-        #     pickle.dump(df, output_file, protocol=pickle.HIGHEST_PROTOCOL)
         df = self.excel_sheets['Grid']
 
         export = df['Unnamed: 3'][7]

@@ -3,6 +3,8 @@
 simplifies initialising all the models for use
 in the control scripts
 """
+from pathlib import Path
+from typing import Dict
 
 from .io import inputs
 from .power import grid, renewables
@@ -10,9 +12,17 @@ from .storage import hot_water_tank, electrical_storage
 from .heat import heatpump, auxiliary
 
 
-def init(name, subname):
+def init(root: Path, subname: str) -> Dict[str, object]:
+    """Initialise pylesa classes for use in controllers
+    
+    Args:
+        root: root directory of simulation
+        subname: name of specific parametric run configuration
 
-    myInputs = inputs.Inputs(name, subname)
+    Returns:
+        Dictionary of initialised objects
+    """
+    myInputs = inputs.Inputs(root, subname)
 
     # initialise instance of classes
     input_windturbine = myInputs.windturbine_user()
@@ -177,7 +187,7 @@ def init(name, subname):
 
         fr = grid_inputs['flat_rates']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             flat_rate=fr)
 
@@ -185,7 +195,7 @@ def init(name, subname):
 
         vp = grid_inputs['variable_periods']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             variable_periods=vp, variable_periods_year=variable_periods_year)
 
@@ -193,7 +203,7 @@ def init(name, subname):
 
         twm = grid_inputs['wholesale_market']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             wholesale_market=twm, premium=premium,
             maximum=maximum)
@@ -202,7 +212,7 @@ def init(name, subname):
 
         fr = grid_inputs['flat_rates']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             flat_rate=fr, lower_percent=lower_percent,
             higher_percent=higher_percent, higher_discount=higher_discount,
@@ -212,7 +222,7 @@ def init(name, subname):
 
         twm = grid_inputs['wholesale_market']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             wholesale_market=twm, premium=premium,
             maximum=maximum, lower_percent=lower_percent,
@@ -223,7 +233,7 @@ def init(name, subname):
 
         vp = grid_inputs['variable_periods']
         myGrid = grid.Grid(
-            name, subname, export,
+            root, subname, export,
             tariff_choice, balancing_mechanism, grid_services,
             variable_periods=vp, variable_periods_year=variable_periods_year,
             lower_percent=lower_percent,

@@ -4,23 +4,25 @@ sets up the model to run the ranges defined
 only set up for hot water tank capacity and heat pump
 """
 
-import os
 import pandas as pd
+from pathlib import Path
 import pickle
 import shutil
+
+from .constants import OUTDIR, INDIR
+from .io.paths import valid_dir
 
 
 class Para(object):
 
-    def __init__(self, name):
+    def __init__(self, root: Path):
 
-        self.name = name
+        self.root = Path(root).resolve()
+        self.indir = valid_dir(self.root / INDIR)
+        self.outdir = valid_dir(self.root / OUTDIR)
 
         # read in set of parameters from input
-        file1 = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name[:-5],
-            "inputs.pkl")
-        self.input = pd.read_pickle(file1)
+        self.input = pd.read_pickle(self.indir / "inputs.pkl")
         pa = self.input['parametric_analysis']
 
         # list set of heat pump sizes
@@ -55,22 +57,14 @@ class Para(object):
                 'hp_' + str(combos[i][0]) + '_ts_' + str(combos[i][1]))
         self.folder_name = folder_name
 
-        # point to folder which will contain the parametric inputs
-        folder = os.path.join(
-            os.path.dirname(__file__), "..", "inputs",
-            name[:-5])
-        self.folder = folder
-
         # make output folders for each combination
         for i in range(len(folder_name)):
-            folder = os.path.join(
-                os.path.dirname(__file__), '..', 'outputs',
-                name[:-5], folder_name[i])
-            if os.path.isdir(folder) is False:
-                os.mkdir(folder)
-            elif os.path.isdir(folder) is True:
+            folder = self.outdir / str(folder_name[i])
+            if folder.is_dir() is False:
+                folder.mkdir()
+            elif folder.is_dir() is True:
                 shutil.rmtree(folder)
-                os.mkdir(folder)
+                folder.mkdir()
 
     def create_pickles(self):
 
@@ -78,10 +72,7 @@ class Para(object):
         for i in range(len(self.folder_name)):
 
             # read in set of parameters from input
-            file1 = os.path.join(
-                os.path.dirname(__file__), "..", "inputs", self.name[:-5],
-                "inputs.pkl")
-            self.input = pd.read_pickle(file1)
+            self.input = pd.read_pickle(self.indir / "inputs.pkl")
 
             # read heat pump pickle for changing the basics capacity
             hp_basics = self.input['hp_basics']
@@ -132,7 +123,6 @@ class Para(object):
             self.input['thermal_storage'] = ts
 
             # save new pickle output
-            file = os.path.join(
-                self.folder, self.folder_name[i] + ".pkl")
+            file = self.root / INDIR / (self.folder_name[i] + ".pkl")
             with open(file, 'wb') as handle:
                 pickle.dump(self.input, handle, protocol=pickle.HIGHEST_PROTOCOL)

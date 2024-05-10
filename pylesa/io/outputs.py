@@ -1,14 +1,16 @@
 import logging
-import os
 import pandas as pd
+from pathlib import Path
 import numpy as np
 import shutil
 import pickle
 # import register_matplotlib_converters
 import matplotlib.pyplot as plt
+from typing import Dict
 
 from . import inputs
 from .. import tools as t
+from ..constants import INDIR, OUTDIR
 from ..power import grid
 
 LOG = logging.getLogger(__name__)
@@ -44,16 +46,16 @@ plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 6})
 
 
-def run_plots(name, subname):
-
-    myInputs = inputs.Inputs(name, subname)
+def run_plots(root: str | Path, subname: str):
+    root = Path(root).resolve()
+    myInputs = inputs.Inputs(root, subname)
     # controller inputs
     controller_info = myInputs.controller()['controller_info']
     timesteps = controller_info['total_timesteps']
 
     if timesteps == 8760:
         for period in ['Year', 'Winter', 'Summer']:
-            myPlots = Plot(name, subname, period)
+            myPlots = Plot(root, subname, period)
             myPlots.operation()
             myPlots.elec_demand_and_RES()
             myPlots.HP_and_heat_demand()
@@ -64,7 +66,7 @@ def run_plots(name, subname):
                 myPlots.RES_bar()
     else:
         period = 'User'
-        myPlots = Plot(name, subname, period)
+        myPlots = Plot(root, subname, period)
         myPlots.operation()
         myPlots.elec_demand_and_RES()
         myPlots.HP_and_heat_demand()
@@ -74,9 +76,10 @@ def run_plots(name, subname):
         myPlots.RES_bar()
 
 
-def run_KPIs(name):
+def run_KPIs(root: str | Path):
+    root = Path(root).resolve()
 
-    my3DPlots = ThreeDPlots(name)
+    my3DPlots = ThreeDPlots(root)
     my3DPlots.KPIs_to_csv()
     my3DPlots.plot_opex()
     my3DPlots.plot_RES()
@@ -90,22 +93,18 @@ def run_KPIs(name):
 
 class Plot(object):
 
-    def __init__(self, name, subname, period):
+    def __init__(self, root: Path, subname: str, period: str):
 
-        self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "outputs",
-            name[:-5], subname, period)
-        self.name = name
+        self.root = Path(root).resolve()
+        self.folder_path = self.root / OUTDIR / subname / period
         self.subname = subname
         # period can be 'Summer', 'Winter', 'Year', 'User'
         self.period = period
 
-        file_output_pickle = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'outputs',
-            name[:-5], subname, 'outputs.pkl')
+        file_output_pickle = self.root / OUTDIR / subname / 'outputs.pkl'
         self.results = pd.read_pickle(file_output_pickle)
 
-        self.myInputs = inputs.Inputs(name, subname)
+        self.myInputs = inputs.Inputs(self.root, subname)
         # controller inputs
         controller_info = self.myInputs.controller()['controller_info']
         self.timesteps = controller_info['total_timesteps']
@@ -113,12 +112,12 @@ class Plot(object):
 
         # creates a folder for keeping all the
         # outputs as saved from the excel file
-        if os.path.isdir(self.folder_path) is False:
-            os.mkdir(self.folder_path)
+        if self.folder_path.is_dir() is False:
+            self.folder_path.mkdir()
 
-        elif os.path.isdir(self.folder_path) is True:
+        elif self.folder_path.is_dir() is True:
             shutil.rmtree(self.folder_path)
-            os.mkdir(self.folder_path)
+            self.folder_path.mkdir()
 
     def period_timesteps(self):
 
@@ -152,7 +151,7 @@ class Plot(object):
     def operation(self):
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(self.folder_path, 'operation.png')
+        fileout = self.folder_path / 'operation.png'
         # pp = PdfPages(fileout)
 
         results = self.results
@@ -215,10 +214,7 @@ class Plot(object):
     def elec_demand_and_RES(self):
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(
-            self.folder_path,
-            'electricity_demand_and_generation.png')
-
+        fileout = self.folder_path / 'electricity_demand_and_generation.png'
         results = self.results
         timesteps = self.timesteps
         first_hour = self.first_hour
@@ -299,9 +295,7 @@ class Plot(object):
     def HP_and_heat_demand(self):
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(
-            self.folder_path, 'heat_demand_and_heat_pump.png')
-        # pp = PdfPages(fileout)
+        fileout = self.folder_path / 'heat_demand_and_heat_pump.png'
 
         results = self.results
         timesteps = self.timesteps
@@ -411,17 +405,14 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        fileout = os.path.join(
-            self.folder_path, 'heatpump_cop_and_duty.png')
+        fileout = self.folder_path / 'heatpump_cop_and_duty.png'
         plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
         plt.close()
 
     def TS(self):
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(
-            self.folder_path,
-            'thermal_storage.png')
+        fileout = self.folder_path / 'thermal_storage.png'
 
         results = self.results
         timesteps = self.timesteps
@@ -483,7 +474,7 @@ class Plot(object):
 
     def ES(self):
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(self.folder_path, 'electrical_storage.png')
+        fileout = self.folder_path / 'electrical_storage.png'
 
         results = self.results
         timesteps = self.timesteps
@@ -553,7 +544,7 @@ class Plot(object):
     def grid(self):
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(self.folder_path, 'grid.png')
+        fileout = self.folder_path / 'grid.png'
 
         results = self.results
         timesteps = self.timesteps
@@ -609,7 +600,7 @@ class Plot(object):
         # bar chart of total RES
 
         # points to where the pdf will be saved and its name
-        fileout = os.path.join(self.folder_path, 'RES_bar_charts.png')
+        fileout = self.folder_path / 'RES_bar_charts.png'
 
         results = self.results
         timesteps = self.timesteps
@@ -672,15 +663,14 @@ class Plot(object):
 
 class Calcs(object):
 
-    def __init__(self, name, subname, results):
+    def __init__(self, root: Path, subname: str, results: Dict[str, pd.DataFrame]):
 
-        self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "outputs", name[:-5], subname)
-        self.name = name
+        self.root = Path(root).resolve()
+        self.folder_path = self.root / OUTDIR / subname
         self.subname = subname
         self.results = results[subname]
 
-        self.myInputs = inputs.Inputs(name, subname)
+        self.myInputs = inputs.Inputs(self.root, subname)
         # controller inputs
         controller_info = self.myInputs.controller()['controller_info']
         self.timesteps = controller_info['total_timesteps']
@@ -905,7 +895,6 @@ class Calcs(object):
 
     def grid_RES_used(self):
 
-        name = self.name
         subname = self.subname
 
         results = self.results
@@ -943,7 +932,7 @@ class Calcs(object):
 
             fr = grid_inputs['flat_rates']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 flat_rate=fr, lower_percent=lower_percent,
                 higher_percent=higher_percent, higher_discount=higher_discount,
@@ -953,7 +942,7 @@ class Calcs(object):
 
             twm = grid_inputs['wholesale_market']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 wholesale_market=twm, premium=premium,
                 maximum=maximum, lower_percent=lower_percent,
@@ -964,7 +953,7 @@ class Calcs(object):
 
             vp = grid_inputs['variable_periods']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 variable_periods=vp,
                 variable_periods_year=variable_periods_year,
@@ -988,7 +977,6 @@ class Calcs(object):
 
     def heat_grid_RES_used(self):
 
-        name = self.name
         subname = self.subname
 
         results = self.results
@@ -1026,7 +1014,7 @@ class Calcs(object):
 
             fr = grid_inputs['flat_rates']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 flat_rate=fr, lower_percent=lower_percent,
                 higher_percent=higher_percent, higher_discount=higher_discount,
@@ -1036,7 +1024,7 @@ class Calcs(object):
 
             twm = grid_inputs['wholesale_market']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 wholesale_market=twm, premium=premium,
                 maximum=maximum, lower_percent=lower_percent,
@@ -1047,7 +1035,7 @@ class Calcs(object):
 
             vp = grid_inputs['variable_periods']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 variable_periods=vp,
                 variable_periods_year=variable_periods_year,
@@ -1072,7 +1060,6 @@ class Calcs(object):
 
     def heat_from_grid_RES(self):
 
-        name = self.name
         subname = self.subname
 
         results = self.results
@@ -1110,7 +1097,7 @@ class Calcs(object):
 
             fr = grid_inputs['flat_rates']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 flat_rate=fr, lower_percent=lower_percent,
                 higher_percent=higher_percent, higher_discount=higher_discount,
@@ -1120,7 +1107,7 @@ class Calcs(object):
 
             twm = grid_inputs['wholesale_market']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 wholesale_market=twm, premium=premium,
                 maximum=maximum, lower_percent=lower_percent,
@@ -1131,7 +1118,7 @@ class Calcs(object):
 
             vp = grid_inputs['variable_periods']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 variable_periods=vp,
                 variable_periods_year=variable_periods_year,
@@ -1157,7 +1144,6 @@ class Calcs(object):
 
     def HP_from_grid_RES(self):
 
-        name = self.name
         subname = self.subname
 
         results = self.results
@@ -1195,7 +1181,7 @@ class Calcs(object):
 
             fr = grid_inputs['flat_rates']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 flat_rate=fr, lower_percent=lower_percent,
                 higher_percent=higher_percent, higher_discount=higher_discount,
@@ -1205,7 +1191,7 @@ class Calcs(object):
 
             twm = grid_inputs['wholesale_market']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 wholesale_market=twm, premium=premium,
                 maximum=maximum, lower_percent=lower_percent,
@@ -1216,7 +1202,7 @@ class Calcs(object):
 
             vp = grid_inputs['variable_periods']
             myGrid = grid.Grid(
-                name, subname, export,
+                self.root, subname, export,
                 tariff_choice, balancing_mechanism, grid_services,
                 variable_periods=vp,
                 variable_periods_year=variable_periods_year,
@@ -1584,25 +1570,22 @@ class Calcs(object):
 
 class ThreeDPlots(object):
 
-    def __init__(self, name):
-
+    def __init__(self, root: Path):
+        self.root = Path(root).resolve()
         # folder path name is in main name alongside parametric solutions
-        self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "outputs", name[:-5], 'KPIs')
-        self.name = name
+        self.folder_path = self.root / OUTDIR / 'KPIs'
 
         # creates a folder for keeping all the
         # pickle input files as saved from the excel file
-        if os.path.isdir(self.folder_path) is False:
-            os.mkdir(self.folder_path)
+        if self.folder_path.is_dir() is False:
+            self.folder_path.mkdir()
 
-        elif os.path.isdir(self.folder_path) is True:
+        elif self.folder_path.is_dir() is True:
             shutil.rmtree(self.folder_path)
-            os.mkdir(self.folder_path)
+            self.folder_path.mkdir()
+
         # read in set of parameters from input
-        file1 = os.path.join(
-            os.path.dirname(__file__), "..", "..", "inputs", name[:-5],
-            "inputs.pkl")
+        file1 = self.root / INDIR / "inputs.pkl"
         self.input = pd.read_pickle(file1)
         pa = self.input['parametric_analysis']
         # list set of heat pump sizes
@@ -1634,9 +1617,7 @@ class ThreeDPlots(object):
             subname = 'hp_' + str(combos[i][0]) + '_ts_' + str(combos[i][1])
             subnames.append(subname)
             # read pickle output file
-            file_output_pickle = os.path.join(
-                os.path.dirname(__file__), '..', '..', 'outputs',
-                self.name[:-5], subname, 'outputs.pkl')
+            file_output_pickle = self.root / OUTDIR / subname / 'outputs.pkl'
             results[subname] = pd.read_pickle(file_output_pickle)
         self.results = results
         self.subnames = subnames
@@ -1661,7 +1642,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _opex = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).operating_cost()
             opex.append(_opex)
 
@@ -1688,7 +1669,7 @@ class ThreeDPlots(object):
 
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'operating_cost.png')
+        fileout = self.folder_path / 'operating_cost.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1698,7 +1679,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _RES_used = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).RES_self_consumption()
             RES_used.append(_RES_used)
 
@@ -1724,7 +1705,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'RES_self_consumption.png')
+        fileout = self.folder_path / 'RES_self_consumption.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1734,7 +1715,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _RES_used = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).heat_met_RES()
             RES_used.append(_RES_used)
 
@@ -1760,44 +1741,9 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'heat_from_RES.png')
+        fileout = self.folder_path / 'heat_from_RES.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
-
-    # def plot_HP_met_RES(self):
-    #     HP_met_RES = []
-
-    #     for x in range(len(self.subnames)):
-    #         _RES_used = Calcs(
-    #             self.name, self.subnames[x],
-    #             self.results).HP_met_RES()
-    #         HP_met_RES.append(_RES_used)
-
-    #     z = HP_met_RES
-
-    #     plt.style.use('classic')
-
-    #     fig = plt.figure()
-    #     ax = fig.add_subplot(projection='3d')
-
-    #     x = self.heat_pump_sizes_x()
-    #     y = self.thermal_store_sizes_y()
-
-    #     ax.plot_trisurf(x, y, z, linewidth=0, antialiased=False,
-    #                     cmap=plt.cm.Spectral)
-
-    #     ax.set_xlabel('Heat pump sizes (kW)', fontsize=10)
-    #     ax.set_ylabel('Thermal storage capacity ($m^3$)', fontsize=10)
-    #     ax.set_zlabel('Heat pump usage from RES (%)', fontsize=10)
-    #     ax.xaxis.labelpad = 15
-    #     ax.yaxis.labelpad = 15
-    #     ax.zaxis.labelpad = 15
-    #     # plt.show()
-    #     plt.tight_layout()
-
-    #     fileout = os.path.join(self.folder_path, 'HP_from_RES.png')
-    #     plt.savefig(fileout, format='png', dpi=300)
-    #     plt.close()
 
     def plot_HP_size_ratio(self):
 
@@ -1805,7 +1751,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _HP_size_ratio = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).HP_size_ratio()
             HP_size_ratio.append(_HP_size_ratio)
 
@@ -1831,7 +1777,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'HP_size_ratio.png')
+        fileout = self.folder_path / 'HP_size_ratio.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1841,7 +1787,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _HP_utilisation = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).HP_utilisation()
             HP_utilisation.append(_HP_utilisation)
 
@@ -1868,7 +1814,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'HP_utilisation.png')
+        fileout = self.folder_path / 'HP_utilisation.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1878,7 +1824,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _capital_cost = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).capital_cost()
             capital_cost.append(_capital_cost)
 
@@ -1904,7 +1850,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'capital_cost.png')
+        fileout = self.folder_path / 'capital_cost.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1914,7 +1860,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _cost_of_heat = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).cost_of_heat()
             cost_of_heat.append(_cost_of_heat)
 
@@ -1941,7 +1887,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'cost_of_heat.png')
+        fileout = self.folder_path / 'cost_of_heat.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -1951,7 +1897,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
             _levelised_cost_of_heat = Calcs(
-                self.name, self.subnames[x],
+                self.root, self.subnames[x],
                 self.results).levelised_cost_of_heat()
             levelised_cost_of_heat.append(_levelised_cost_of_heat)
 
@@ -1978,7 +1924,7 @@ class ThreeDPlots(object):
         # plt.show()
         plt.tight_layout()
 
-        fileout = os.path.join(self.folder_path, 'levelised_cost_of_heat.png')
+        fileout = self.folder_path / 'levelised_cost_of_heat.png'
         plt.savefig(fileout, format='png', dpi=300)
         plt.close()
 
@@ -2015,7 +1961,7 @@ class ThreeDPlots(object):
 
         for x in range(len(self.subnames)):
 
-            myCalcs = Calcs(self.name, self.subnames[x], self.results)
+            myCalcs = Calcs(self.root, self.subnames[x], self.results)
 
             opex[x] = myCalcs.operating_cost()
             RES_used[x] = myCalcs.RES_self_consumption()
@@ -2059,13 +2005,11 @@ class ThreeDPlots(object):
                       'levelised_cost_of_energy'
                       ]
 
-        pickle_name = 'KPI_economic_' + self.name[:-5] + '.pkl'
-        pickleout = os.path.join(self.folder_path, pickle_name)
+        pickleout = self.folder_path / ('KPI_economic_' + self.root.name + '.pkl')
         with open(pickleout, 'wb') as handle:
             pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        file_name = 'KPI_economic_' + self.name[:-5] + '.csv'
-        fileout = os.path.join(self.folder_path, file_name)
+        fileout = self.folder_path / ('KPI_economic_' + self.root.name + '.csv')
         df.to_csv(fileout, index=False)
 
         technical_data = np.array(
@@ -2088,13 +2032,11 @@ class ThreeDPlots(object):
                       'days_storage_content'
                       ]
 
-        pickle_name = 'KPI_technical_' + self.name[:-5] + '.pkl'
-        pickleout = os.path.join(self.folder_path, pickle_name)
+        pickleout = self.folder_path / ('KPI_technical_' + self.root.name + '.pkl')
         with open(pickleout, 'wb') as handle:
             pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        file_name = 'KPI_technical_' + self.name[:-5] + '.csv'
-        fileout = os.path.join(self.folder_path, file_name)
+        fileout = self.folder_path / ('KPI_technical_' + self.root.name + '.csv')
         df.to_csv(fileout, index=False)
 
         output = np.array(
@@ -2111,11 +2053,9 @@ class ThreeDPlots(object):
                       'sum_import', 'sum_export'
                       ]
 
-        pickle_name = 'output_' + self.name[:-5] + '.pkl'
-        pickleout = os.path.join(self.folder_path, pickle_name)
+        pickleout = self.folder_path / ('output_' + self.root.name + '.pkl')
         with open(pickleout, 'wb') as handle:
             pickle.dump(df, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        file_name = 'output_' + self.name[:-5] + '.csv'
-        fileout = os.path.join(self.folder_path, file_name)
+        fileout = self.folder_path / ('output_' + self.root.name + '.csv')
         df.to_csv(fileout, index=False)
