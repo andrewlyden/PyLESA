@@ -250,27 +250,27 @@ class HeatPump(object):
                 hp_duty = duty_x
 
             elif self.modelling_approach == 'Lorentz':
-                ambient_return = ambient_temp[timestep] - self.ambient_delta_t
+                ambient_return = ambient_temp.iloc[timestep] - self.ambient_delta_t
                 cop = myLorentz.calc_cop(hp_eff,
-                                         self.flow_temp_source[timestep],
-                                         self.return_temp[timestep],
-                                         ambient_temp[timestep],
+                                         self.flow_temp_source.iloc[timestep],
+                                         self.return_temp.iloc[timestep],
+                                         ambient_temp.iloc[timestep],
                                          ambient_return)
                 hp_duty = myLorentz.calc_duty(self.capacity)
 
             elif self.modelling_approach == 'Generic regression':
                 if self.hp_type == ASHP:
                     cop = myGenericRegression.ASHP_cop(
-                        self.flow_temp_source[timestep],
-                        ambient_temp[timestep])
+                        self.flow_temp_source.iloc[timestep],
+                        ambient_temp.iloc[timestep])
 
                 elif self.hp_type == GSHP or self.hp_type == WSHP:
                     cop = myGenericRegression.GSHP_cop(
-                        self.flow_temp_source[timestep],
-                        ambient_temp[timestep])
+                        self.flow_temp_source.iloc[timestep],
+                        ambient_temp.iloc[timestep])
 
                 # account for defrosting below 5 drg
-                if ambient_temp[timestep] <= 5:
+                if ambient_temp.iloc[timestep] <= 5:
                     cop = 0.9 * cop
 
                 hp_duty = duty_x
@@ -278,25 +278,25 @@ class HeatPump(object):
             elif self.modelling_approach == 'Standard test regression':
                 hp_duty = myStandardRegression.predict_duty(
                     duty_model,
-                    ambient_temp[timestep],
-                    self.flow_temp_source[timestep])
+                    ambient_temp.iloc[timestep],
+                    self.flow_temp_source.iloc[timestep])
 
                 # 15% reduction in performance if
                 # data not done to standards
-                if self.data_input == 'Integrated performance' or ambient_temp[timestep] > 5:
+                if self.data_input == 'Integrated performance' or ambient_temp.iloc[timestep] > 5:
                     cop = myStandardRegression.predict_COP(
                         COP_model,
-                        ambient_temp[timestep],
-                        self.flow_temp_source[timestep])
+                        ambient_temp.iloc[timestep],
+                        self.flow_temp_source.iloc[timestep])
 
                 elif self.data_input == 'Peak performance':
                     if self.hp_type == ASHP:
 
-                        if ambient_temp[timestep] <= 5:
+                        if ambient_temp.iloc[timestep] <= 5:
                             cop = 0.9 * myStandardRegression.predict_COP(
                                 COP_model,
-                                ambient_temp[timestep],
-                                self.flow_temp_source[timestep])
+                                ambient_temp.iloc[timestep],
+                                self.flow_temp_source.iloc[timestep])
 
             d = {'cop': cop, 'duty': hp_duty}
             performance.append(d)
@@ -535,8 +535,8 @@ class GenericRegression(object):
                 c = 0.9 * c
             cop_45.append(c)
 
-        plt.plot(x_ambient, cop_45, LineWidth=2)
-        plt.plot(x_ambient, cop_55, LineWidth=2)
+        plt.plot(x_ambient, cop_45, linewidth=2)
+        plt.plot(x_ambient, cop_55, linewidth=2)
         plt.legend(['Flow T 45', 'FLow T 55'], loc='best')
         plt.ylabel('COP')
         plt.xlabel('Ambient temperature')

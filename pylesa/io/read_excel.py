@@ -11,8 +11,8 @@ import pandas as pd
 
 LOG = logging.getLogger(__name__)
 
-def run_all(excel_file_name):
-    excel_path = Path(excel_file_name).resolve()
+def run_all(excel_path):
+    excel_path = Path(excel_path).resolve()
     LOG.info(f'Reading MS Excel file: {excel_path.name}')
     myInput = Input(str(excel_path))
 

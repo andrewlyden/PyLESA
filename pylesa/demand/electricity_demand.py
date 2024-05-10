@@ -142,7 +142,7 @@ def plot_demand():
     path = ifiles('pylesa').joinpath('data', 'demand.predicted_elec_demand.csv')
     df = pd.read_csv(path, header=None, names=['dem'])
 
-    plt.plot(df['dem'][24:72], 'b', LineWidth=1)
+    plt.plot(df['dem'][24:72], 'b', linewidth=1)
     plt.ylabel('Energy (kWh)')
     plt.xlabel('Hour')
     plt.show()

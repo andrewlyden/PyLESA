@@ -13,7 +13,7 @@ class Inputs(object):
     def __init__(self, name, subname):
 
         self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name[:-5], subname + '.pkl')
+            os.path.dirname(__file__), "..", "..", "inputs", name[:-5], subname + '.pkl')
         self.container = pd.read_pickle(self.folder_path)
 
     def controller(self):

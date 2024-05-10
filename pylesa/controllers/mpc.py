@@ -2,7 +2,7 @@
 
 runs the control strategy MPC
 """
-
+import logging
 from gekko import GEKKO
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +13,7 @@ import os
 from .. import initialise_classes, tools
 from ..io import inputs
 
+LOG = logging.getLogger(__name__)
 
 class Scheduler(object):
 
@@ -601,21 +602,21 @@ class Scheduler(object):
         # Plot solution
         # plt.figure()
         # plt.subplot(4, 1, 1)
-        # plt.plot(m.time, HPt.value, 'r', LineWidth=2)
-        # plt.plot(m.time, aux.value, 'y', LineWidth=2)
-        # plt.plot(m.time, hd.value, 'g', LineWidth=2)
+        # plt.plot(m.time, HPt.value, 'r', linewidth=2)
+        # plt.plot(m.time, aux.value, 'y', linewidth=2)
+        # plt.plot(m.time, hd.value, 'g', linewidth=2)
         # plt.ylabel(['HPt', 'aux', 'HD'])
         # plt.legend(['HPt', 'aux', 'HD'], loc='best')
         # plt.subplot(4, 1, 2)
-        # plt.plot(m.time, soc.value, 'b', LineWidth=2)
+        # plt.plot(m.time, soc.value, 'b', linewidth=2)
         # plt.legend(['SOC'], loc='best')
         # plt.ylabel('SOC')
         # plt.subplot(4, 1, 3)
-        # plt.plot(m.time, IC.value, 'g', LineWidth=2)
+        # plt.plot(m.time, IC.value, 'g', linewidth=2)
         # plt.legend(['Import cost'], loc='best')
         # plt.ylabel('Import cost')
         # plt.subplot(4, 1, 4)
-        # plt.plot(m.time, surplus.value, 'm', LineWidth=2)
+        # plt.plot(m.time, surplus.value, 'm', linewidth=2)
         # plt.legend([r'surplus'], loc='best')
         # plt.ylabel('Surplus')
         # plt.xlabel('Time')
@@ -635,7 +636,9 @@ class Scheduler(object):
         pbar.start()
 
         if final_hour > 8760:
-            raise Exception('Timesteps extend beyond end of year...')
+            msg = f'The final timestep is {final_hour} which is beyond the end of the year (8760)'
+            LOG.error(msg)
+            raise ValueError(msg)
 
         results = []
         next_results = []
@@ -801,29 +804,29 @@ class Scheduler(object):
         # time = range(first_hour, final_hour)
         # plt.figure()
         # plt.subplot(4, 1, 1)
-        # plt.plot(time, HPt, 'r', LineWidth=2)
-        # plt.plot(time, aux, 'y', LineWidth=2)
-        # plt.plot(time, hd, 'g', LineWidth=2)
+        # plt.plot(time, HPt, 'r', linewidth=2)
+        # plt.plot(time, aux, 'y', linewidth=2)
+        # plt.plot(time, hd, 'g', linewidth=2)
         # plt.ylabel('HPt, aux and HD')
         # plt.legend(['HPt', 'aux', 'HD'], loc='best')
         # plt.subplot(4, 1, 2)
-        # plt.plot(time, final_nodes_temp, 'b', LineWidth=2)
+        # plt.plot(time, final_nodes_temp, 'b', linewidth=2)
         # plt.legend(['Node temperature'], loc='best')
         # plt.ylabel('Node temperature')
         # plt.subplot(4, 1, 3)
-        # plt.plot(time, IC, 'g', LineWidth=2)
+        # plt.plot(time, IC, 'g', linewidth=2)
         # plt.legend(['Import cost'], loc='best')
         # plt.ylabel('Import cost')
         # plt.subplot(4, 1, 4)
-        # # plt.plot(time, cop, 'm', LineWidth=2)
+        # # plt.plot(time, cop, 'm', linewidth=2)
         # # plt.legend(['cop'], loc='best')
         # # plt.ylabel('cop')
-        # plt.plot(time, surplus, 'm', LineWidth=2)
-        # plt.plot(time, export, 'b', LineWidth=2)
+        # plt.plot(time, surplus, 'm', linewidth=2)
+        # plt.plot(time, export, 'b', linewidth=2)
         # plt.legend(['surplus', 'export'], loc='best')
         # plt.ylabel('Surplus, and export')
-        # # plt.plot(time, TSc, 'r', LineWidth=2)
-        # # plt.plot(time, TSd, 'g', LineWidth=2)
+        # # plt.plot(time, TSc, 'r', linewidth=2)
+        # # plt.plot(time, TSd, 'g', linewidth=2)
         # # plt.legend(['TSc', 'TSd'], loc='best')
         # # plt.ylabel('Charging/discharging')
         # plt.xlabel('Time')

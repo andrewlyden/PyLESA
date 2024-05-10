@@ -14,13 +14,13 @@ from ..environment import weather
 
 LOG = logging.getLogger(__name__)
 
-INSULATION_k = {
+INSULATION_K = {
     'polyurethane': 0.025,
     'fibreglass': 0.04,
     'polystyrene': 0.035
 }
-INSIDE = 'Inside'
-OUTSIDE = 'Outside'
+INSIDE = 'inside'
+OUTSIDE = 'outside'
 
 class HotWaterTank(object):
 
@@ -49,8 +49,8 @@ class HotWaterTank(object):
 
         # float or str inputs
         self.capacity = capacity
-        self.insulation = insulation
-        self.location = location
+        self.insulation = str(insulation).lower().strip()
+        self.location = str(location).lower().strip()
         self.number_nodes = number_nodes
 
         # dic inputs
@@ -97,15 +97,15 @@ class HotWaterTank(object):
         Returns:
             float -- k-value of insulation W/mK
         """
-        if not self.insulation in INSULATION_k:
-            msg = f'Insulation {self.insulation} is not valid, must be one of {INSULATION_k}'
+        if not self.insulation in INSULATION_K:
+            msg = f'Insulation {self.insulation} is not valid, must be one of {INSULATION_K}'
             LOG.error(msg)
             raise ValueError(msg)
 
         # units of k need to be adjusted from W to joules
         # over the hour, and this requires
         # minuts in hour * seconds in minute (60*60)
-        return INSULATION_k[self.insulation.lower()] * 3600
+        return INSULATION_K[self.insulation] * 3600
 
     def specific_heat_water(self, temp):
         """cp of water

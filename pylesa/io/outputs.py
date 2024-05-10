@@ -1,3 +1,4 @@
+import logging
 import os
 import pandas as pd
 import numpy as np
@@ -6,16 +7,11 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib.pyplot as plt
 
-# 3d plotting
-import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
-
 from . import inputs
-
 from .. import tools as t
 from ..power import grid
+
+LOG = logging.getLogger(__name__)
 
 """
 plt.style.available
@@ -97,17 +93,17 @@ class Plot(object):
     def __init__(self, name, subname, period):
 
         self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "outputs",
+            os.path.dirname(__file__), "..", "..", "outputs",
             name[:-5], subname, period)
         self.name = name
         self.subname = subname
         # period can be 'Summer', 'Winter', 'Year', 'User'
         self.period = period
 
-        self.file_output_pickle = os.path.join(
-            os.path.dirname(__file__), '..', 'outputs',
+        file_output_pickle = os.path.join(
+            os.path.dirname(__file__), '..', '..', 'outputs',
             name[:-5], subname, 'outputs.pkl')
-        self.results = pd.read_pickle(self.file_output_pickle)
+        self.results = pd.read_pickle(file_output_pickle)
 
         self.myInputs = inputs.Inputs(name, subname)
         # controller inputs
@@ -143,7 +139,9 @@ class Plot(object):
                 timesteps = self.timesteps
                 first_hour = self.first_hour
             else:
-                raise Exception('Unacceptable period defined')
+                msg = f"Period definition {self.period} is not valid, must be one of [Summer, Winter, Year, User]"
+                LOG.error(msg)
+                raise ValueError(msg)
 
         else:
             timesteps = self.timesteps
@@ -187,24 +185,24 @@ class Plot(object):
 
         plt.subplot(4, 1, 1)
         plt.title('Operation graphs')
-        plt.plot(time, HPt[first_hour:final_hour], 'r', LineWidth=1)
-        plt.plot(time, aux[first_hour:final_hour], 'b', LineWidth=1)
-        plt.plot(time, hd[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, HPt[first_hour:final_hour], 'r', linewidth=1)
+        plt.plot(time, aux[first_hour:final_hour], 'b', linewidth=1)
+        plt.plot(time, hd[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('Energy (kWh)')
         plt.legend(['HPt', 'aux', 'HD'], loc='best')
 
         plt.subplot(4, 1, 2)
         plt.plot(time, final_nodes_temp[first_hour:final_hour],
-                 'b', LineWidth=1)
+                 'b', linewidth=1)
         plt.ylabel('Node temperature \n (degC)')
 
         plt.subplot(4, 1, 3)
-        plt.plot(time, IC[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, IC[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('Import cost \n (Pounds per MWh)')
 
         plt.subplot(4, 1, 4)
-        plt.plot(time, surplus[first_hour:final_hour], 'm', LineWidth=1)
-        plt.plot(time, export[first_hour:final_hour], 'b', LineWidth=1)
+        plt.plot(time, surplus[first_hour:final_hour], 'm', linewidth=1)
+        plt.plot(time, export[first_hour:final_hour], 'b', linewidth=1)
         plt.legend(['surplus', 'export'], loc='best')
         plt.ylabel('Energy (kWh)')
 
@@ -402,12 +400,12 @@ class Plot(object):
         plt.figure()
 
         plt.subplot(2, 1, 1)
-        plt.plot(time, cop[first_hour:final_hour], 'r', LineWidth=1)
+        plt.plot(time, cop[first_hour:final_hour], 'r', linewidth=1)
         plt.ylabel('COP')
         plt.title('Heat pump performance')
 
         plt.subplot(2, 1, 2)
-        plt.plot(time, duty[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, duty[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('Duty (kW)')
 
         plt.xlabel('Hour of the year')
@@ -452,7 +450,7 @@ class Plot(object):
         plt.plot(
             time,
             charging_total[first_hour:final_hour],
-            'r', LineWidth=1)
+            'r', linewidth=1)
         plt.ylabel('Energy (kWh)')
         plt.legend(['Charging'], loc='best')
         plt.title('Thermal storage')
@@ -462,7 +460,7 @@ class Plot(object):
         plt.plot(
             time,
             discharging_total[first_hour:final_hour],
-            'b', LineWidth=1)
+            'b', linewidth=1)
         plt.ylabel('Energy (kWh)')
         plt.legend(['Discharging'], loc='best')
 
@@ -470,7 +468,7 @@ class Plot(object):
         plt.subplot(3, 1, 3)
         plt.plot(
             time, final_nodes_temp[first_hour:final_hour],
-            LineWidth=1)
+            linewidth=1)
         plt.ylabel('Temperature degC')
         leg = []
         for x in range(len(final_nodes_temp[first_hour])):
@@ -523,26 +521,26 @@ class Plot(object):
         plt.figure()
         plt.subplot(4, 1, 1)
         plt.title('Electrical Storage')
-        plt.plot(time, ES_to_demand[first_hour:final_hour], 'r', LineWidth=1)
-        plt.plot(time, ES_to_HP_to_demand[first_hour:final_hour], 'y', LineWidth=1)
-        plt.plot(time, RES_to_ES[first_hour:final_hour], 'b', LineWidth=1)
-        plt.plot(time, import_for_ES[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, ES_to_demand[first_hour:final_hour], 'r', linewidth=1)
+        plt.plot(time, ES_to_HP_to_demand[first_hour:final_hour], 'y', linewidth=1)
+        plt.plot(time, RES_to_ES[first_hour:final_hour], 'b', linewidth=1)
+        plt.plot(time, import_for_ES[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('ES c/d')
         plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
 
         plt.subplot(4, 1, 2)
-        plt.plot(time, soc[first_hour:final_hour], 'r', LineWidth=1)
-        # plt.plot(time, dem[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, soc[first_hour:final_hour], 'r', linewidth=1)
+        # plt.plot(time, dem[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('SOC')
         plt.legend(['SOC'], loc='best')
 
         plt.subplot(4, 1, 3)
-        plt.plot(time, IC[first_hour:final_hour], 'g', LineWidth=1)
+        plt.plot(time, IC[first_hour:final_hour], 'g', linewidth=1)
         plt.ylabel('Import cost')
 
         plt.subplot(4, 1, 4)
-        plt.plot(time, surplus[first_hour:final_hour], 'm', LineWidth=1)
-        plt.plot(time, export[first_hour:final_hour], 'b', LineWidth=1)
+        plt.plot(time, surplus[first_hour:final_hour], 'm', linewidth=1)
+        plt.plot(time, export[first_hour:final_hour], 'b', linewidth=1)
         plt.legend(['surplus', 'export'], loc='best')
         plt.ylabel('Surplus, and export')
 
@@ -584,18 +582,18 @@ class Plot(object):
 
         plt.subplot(3, 1, 1)
         plt.title('Grid interaction')
-        plt.plot(time, total_import[first_hour:final_hour], 'b', LineWidth=1)
-        plt.plot(time, total_export[first_hour:final_hour], 'r', LineWidth=1)
+        plt.plot(time, total_import[first_hour:final_hour], 'b', linewidth=1)
+        plt.plot(time, total_export[first_hour:final_hour], 'r', linewidth=1)
         plt.ylabel('Energy (kWh)')
         plt.legend(['Import', 'Export'], loc='best')
 
         plt.subplot(3, 1, 2)
         plt.plot(time, import_price[first_hour:final_hour],
-                 'g', LineWidth=1)
+                 'g', linewidth=1)
         plt.ylabel('import price \n (Pounds/MWh)')
 
         plt.subplot(3, 1, 3)
-        plt.plot(time, cashflow[first_hour:final_hour], 'y', LineWidth=1)
+        plt.plot(time, cashflow[first_hour:final_hour], 'y', linewidth=1)
         plt.ylabel('Cashflow \n (Pounds/MWh)')
 
         plt.xlabel('Hour of the year')
@@ -677,13 +675,9 @@ class Calcs(object):
     def __init__(self, name, subname, results):
 
         self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "outputs", name[:-5], subname)
+            os.path.dirname(__file__), "..", "..", "outputs", name[:-5], subname)
         self.name = name
         self.subname = subname
-
-        self.file_output_pickle = os.path.join(
-            os.path.dirname(__file__), '..', 'outputs',
-            name[:-5], subname, 'outputs.pkl')
         self.results = results[subname]
 
         self.myInputs = inputs.Inputs(name, subname)
@@ -1594,7 +1588,7 @@ class ThreeDPlots(object):
 
         # folder path name is in main name alongside parametric solutions
         self.folder_path = os.path.join(
-            os.path.dirname(__file__), "..", "outputs", name[:-5], 'KPIs')
+            os.path.dirname(__file__), "..", "..", "outputs", name[:-5], 'KPIs')
         self.name = name
 
         # creates a folder for keeping all the
@@ -1607,7 +1601,7 @@ class ThreeDPlots(object):
             os.mkdir(self.folder_path)
         # read in set of parameters from input
         file1 = os.path.join(
-            os.path.dirname(__file__), "..", "inputs", name[:-5],
+            os.path.dirname(__file__), "..", "..", "inputs", name[:-5],
             "inputs.pkl")
         self.input = pd.read_pickle(file1)
         pa = self.input['parametric_analysis']
@@ -1641,7 +1635,7 @@ class ThreeDPlots(object):
             subnames.append(subname)
             # read pickle output file
             file_output_pickle = os.path.join(
-                os.path.dirname(__file__), '..', 'outputs',
+                os.path.dirname(__file__), '..', '..', 'outputs',
                 self.name[:-5], subname, 'outputs.pkl')
             results[subname] = pd.read_pickle(file_output_pickle)
         self.results = results
@@ -1676,7 +1670,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()
@@ -1713,7 +1707,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         x = self.heat_pump_sizes_x()
         y = self.thermal_store_sizes_y()
@@ -1749,7 +1743,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         x = self.heat_pump_sizes_x()
         y = self.thermal_store_sizes_y()
@@ -1784,7 +1778,7 @@ class ThreeDPlots(object):
     #     plt.style.use('classic')
 
     #     fig = plt.figure()
-    #     ax = fig.gca(projection='3d')
+    #     ax = fig.add_subplot(projection='3d')
 
     #     x = self.heat_pump_sizes_x()
     #     y = self.thermal_store_sizes_y()
@@ -1820,7 +1814,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()
@@ -1856,7 +1850,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()
@@ -1893,7 +1887,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()
@@ -1929,7 +1923,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()
@@ -1966,7 +1960,7 @@ class ThreeDPlots(object):
         plt.style.use('classic')
 
         fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection='3d')
 
         y = self.heat_pump_sizes_x()
         x = self.thermal_store_sizes_y()

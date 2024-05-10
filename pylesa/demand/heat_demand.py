@@ -291,7 +291,7 @@ def findhorn_demand():
     # # reduced by factor 0.875
     # df['dem'] = df['dem'] * 0.875
 
-    plt.plot(df['dem'][0:8760], 'r', LineWidth=2)
+    plt.plot(df['dem'][0:8760], 'r', linewidth=2)
     plt.ylabel('Energy (kWh)')
     plt.xlabel('Hour')
     plt.show()

@@ -102,7 +102,9 @@ class FixedOrder(object):
         # final hour is from first hour plus number of timesteps
         final_hour = first_hour + timesteps
         if final_hour > 8760:
-            raise Exception('Timesteps extend beyond end of year...')
+            msg = f'The final timestep is {final_hour} which is beyond the end of the year (8760)'
+            LOG.error(msg)
+            raise ValueError(msg)
 
         # run controller for each timestep
         for timestep in range(first_hour, final_hour):
@@ -189,27 +191,27 @@ class FixedOrder(object):
         # time = range(first_hour, final_hour)
         # plt.figure()
         # plt.subplot(4, 1, 1)
-        # plt.plot(time, ES_to_demand, 'r', LineWidth=2)
-        # plt.plot(time, ES_to_HP_to_demand, 'y', LineWidth=2)
-        # plt.plot(time, RES_to_ES, 'b', LineWidth=2)
-        # plt.plot(time, import_for_ES, 'g', LineWidth=2)
+        # plt.plot(time, ES_to_demand, 'r', linewidth=2)
+        # plt.plot(time, ES_to_HP_to_demand, 'y', linewidth=2)
+        # plt.plot(time, RES_to_ES, 'b', linewidth=2)
+        # plt.plot(time, import_for_ES, 'g', linewidth=2)
         # plt.ylabel('ES charging/discharging')
         # plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
         # plt.subplot(4, 1, 2)
-        # plt.plot(time, soc, 'r', LineWidth=2)
+        # plt.plot(time, soc, 'r', linewidth=2)
         # plt.legend(['SOC'], loc='best')
         # plt.ylabel('SOC')
         # plt.subplot(4, 1, 3)
-        # plt.plot(time, IC, 'g', LineWidth=2)
+        # plt.plot(time, IC, 'g', linewidth=2)
         # plt.legend(['Import cost'], loc='best')
         # plt.ylabel('Import cost')
         # plt.subplot(4, 1, 4)
-        # plt.plot(time, surplus, 'm', LineWidth=2)
-        # plt.plot(time, export, 'b', LineWidth=2)
+        # plt.plot(time, surplus, 'm', linewidth=2)
+        # plt.plot(time, export, 'b', linewidth=2)
         # plt.legend(['surplus', 'export'], loc='best')
         # plt.ylabel('Surplus, and export')
-        # # plt.plot(time, TSc, 'r', LineWidth=2)
-        # # plt.plot(time, TSd, 'g', LineWidth=2)
+        # # plt.plot(time, TSc, 'r', linewidth=2)
+        # # plt.plot(time, TSd, 'g', linewidth=2)
         # # plt.legend(['TSc', 'TSd'], loc='best')
         # # plt.ylabel('Charging/discharging')
         # plt.xlabel('Time')
@@ -217,7 +219,7 @@ class FixedOrder(object):
 
         # write the outputs to a pickle
         file = os.path.join(
-            os.path.dirname(__file__), '..', 'outputs',
+            os.path.dirname(__file__), '..', '..', 'outputs',
             self.name[:-5], self.subname, 'outputs.pkl')
         with open(file, 'wb') as output_file:
             pickle.dump(results, output_file,

@@ -83,7 +83,7 @@ def mean_year(year):
 
 
 def timeindex():
-    time = pd.date_range(start='2017-01-01', periods=8760, freq='H')
+    time = pd.date_range(start='2017-01-01', periods=8760, freq='h')
     return time
 
 

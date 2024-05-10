@@ -7,15 +7,15 @@ from importlib.resources import files as ifiles
 import logging
 import pandas as pd
 import math
-import os
 import numpy as np
 
 import pvlib
 from pvlib.pvsystem import PVSystem
 from pvlib.location import Location
-from pvlib.modelchain import ModelChain
+from pvlib.modelchain import ModelChain as ModelChainPV
+from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 
-from windpowerlib.modelchain import ModelChain as ModelChain1
+from windpowerlib.modelchain import ModelChain as ModelChainWind
 from windpowerlib.wind_turbine import WindTurbine
 
 from windpowerlib.turbine_cluster_modelchain import TurbineClusterModelChain
@@ -167,7 +167,9 @@ class PV(object):
         elif module1 in sandia_modules:
             self.module = sandia_modules[module1]
         else:
-            raise Exception('Could not retrieve PV module data')
+            msg = f"Could not retrieve PV module data for {module1} from CEC or Sandia libraries"
+            LOG.error(msg)
+            raise KeyError(msg)
 
         # of inverters and returns a pandas df
         CEC_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
@@ -224,25 +226,25 @@ class PV(object):
             surface_tilt=self.surface_tilt,
             surface_azimuth=self.surface_azimuth,
             module_parameters=self.module,
-            inverter_parameters=self.inverter)
+            inverter_parameters=self.inverter,
+            # This is the default temperature model in pvlib v0.7.2.
+            # The later versions of pvlib require the temperature model to
+            # be set explicitly.
+            temperature_model_parameters=TEMPERATURE_MODEL_PARAMETERS["sapm"]["open_rack_glass_glass"]
+        )
 
-        mc = ModelChain(
+        mc = ModelChainPV(
             system, location)
         weather = self.weather_data()
 
         weather.index = pd.date_range(
             start='01/01/2017', end='01/01/2018',
-            freq='1h', tz='Europe/London', closed='left')
-        # times = naive_times.tz_localize('Europe/London')
-        # weather = pd.DataFrame(
-        #     [[1050, 1000, 100, 30, 5]],
-        #     columns=['ghi', 'dni', 'dhi', 'temp_air', 'wind_speed'],
-        #     index=[pd.Timestamp('20170401 1200', tz='Europe/London')])
+            freq='1h', tz='Europe/London', inclusive='left')
 
         mc.run_model(weather=weather)
         # multiply by system losses
         # also multiply by correction factor
-        power = (mc.ac.fillna(value=0).round(2) *
+        power = (mc.results.ac.infer_objects(copy=False).fillna(value=0).round(2) *
                  self.multiplier * 0.001 * 0.85 * 0.85)
         # remove negative values
         power[power < 0] = 0
@@ -264,7 +266,7 @@ class PV(object):
         # multiply by correction factor for each hour
         for hour in range(8760):
             month = int(math.floor(hour / 730))
-            power[hour] = power[hour] * cf[month]
+            power.iloc[hour] = power.iloc[hour] * cf[month]
 
         power = power.reset_index(drop=True)
 
@@ -354,7 +356,7 @@ class Windturbine(object):
         # initialises a wind turbine object using
         # the WindTurbine class from windpowerlib
         UserTurbine = WindTurbine(**myTurbine)
-        mc_my_turbine = ModelChain1(UserTurbine).run_model(weather)
+        mc_my_turbine = ModelChainWind(UserTurbine).run_model(weather)
 
         # 1000 factor to make it into kW,
         # and the multi to give number of wind turbines
@@ -417,7 +419,7 @@ class Windturbine(object):
 
         weather = self.weather_data()
 
-        mc_my_turbine = ModelChain1(turbineObj, **modelchain_data).run_model(weather)
+        mc_my_turbine = ModelChainWind(turbineObj, **modelchain_data).run_model(weather)
         # write power output timeseries to WindTurbine object
         # divide by 1000 to keep in kW
         # multply by 0.5 for correcting reanalysis dataset

@@ -21,12 +21,12 @@ def main(xlsxpath: str):
         LOG.error(msg)
         raise FileNotFoundError(msg)
     
-    name = str(xlsxpath)
+    name = str(xlsxpath.name)
 
     t0 = time.time()
 
     # # generate pickle inputs from excel sheet
-    read_excel.run_all(name)
+    read_excel.run_all(xlsxpath)
 
     # generate pickle inputs for parametric analysis
     LOG.info('Generating inputs for all simuation combinations...')
@@ -58,7 +58,7 @@ def main(xlsxpath: str):
 
         if controller == 'Fixed order control':
             # run fixed order controller
-            LOG.info('Running fixed order controller...')
+            LOG.info(f'Running fixed order controller: {subname}')
             fixed_order.FixedOrder(
                 name, subname).run_timesteps(
                     first_hour, timesteps)
