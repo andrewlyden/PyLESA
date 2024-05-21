@@ -1,3 +1,4 @@
+![Test status](https://github.com/thisistheplace/PyLESA/actions/workflows/test.yml/badge.svg?event=push)
 # `PyLESA`
 `PyLESA` stands for Python for Local Energy Systems Analysis and is pronounced "pai-lee-suh".
 
