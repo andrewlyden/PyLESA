@@ -4,10 +4,12 @@ click==8.1.7
 contourpy==1.2.1
 cycler==0.12.1
 et-xmlfile==1.1.0
+exceptiongroup==1.2.1
 fonttools==4.51.0
 gekko==1.1.1
 h5py==3.11.0
 idna==3.7
+iniconfig==2.0.0
 joblib==1.4.2
 kiwisolver==1.4.5
 markdown-it-py==3.0.0
@@ -18,10 +20,12 @@ openpyxl==3.1.2
 packaging==24.0
 pandas==2.2.2
 pillow==10.3.0
+pluggy==1.5.0
 progressbar33==2.4
 pvlib==0.10.4
 Pygments==2.17.2
 pyparsing==3.1.2
+pytest==8.2.1
 python-dateutil==2.9.0.post0
 pytz==2024.1
 requests==2.31.0
@@ -30,7 +34,10 @@ scikit-learn==1.4.2
 scipy==1.13.0
 shellingham==1.5.4
 six==1.16.0
+snakeviz==2.2.0
 threadpoolctl==3.5.0
+tomli==2.0.1
+tornado==6.4
 tuna==0.5.11
 typer==0.12.3
 typing_extensions==4.11.0

@@ -1,4 +1,7 @@
 """Constants used throughout the heat sub-package"""
-ASHP = "ASHP"
-GSHP = "GSHP"
-WSHP = "WSHP"
+from enum import Enum
+
+class HP(Enum):
+    ASHP = "ASHP"
+    GSHP = "GSHP"
+    WSHP = "WSHP"

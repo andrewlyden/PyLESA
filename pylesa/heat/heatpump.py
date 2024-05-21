@@ -1,10 +1,11 @@
 import logging
 
-from .constants import ASHP, GSHP, WSHP
+from .constants import HP
 from ..environment import weather
 
 from .lorentz import Lorentz
-from .regression import GenericRegression, StandardTestRegression
+from . import generic_regression
+from .standard_regression import StandardTestRegression
 
 LOG = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class HeatPump(object):
             standard_test_regression_inputs {dic} -- (default: {None})
         """
 
-        self.hp_type = hp_type
+        self.hp_type = HP[hp_type]
         self.modelling_approach = modelling_approach
         self.capacity = capacity
         self.ambient_delta_t = ambient_delta_t
@@ -73,20 +74,20 @@ class HeatPump(object):
             air_temperature=self.hp_ambient_temp['air_temperature'],
             water_temperature=self.hp_ambient_temp['water_temperature']).heatpump()
 
-        if self.hp_type == ASHP:
+        if self.hp_type == HP.ASHP:
 
             HP_resource = HP_resource.rename(
                 columns={'air_temperature': 'ambient_temp'})
             return HP_resource[['ambient_temp']]
 
-        elif self.hp_type == WSHP:
+        elif self.hp_type == HP.WSHP:
 
             HP_resource = HP_resource.rename(
                 columns={'water_temperature': 'ambient_temp'})
             return HP_resource[['ambient_temp']]
 
         else:
-            msg = f"Invalid heat pump type: {self.hp_type}, must be {ASHP} or {WSHP}"
+            msg = f"Invalid heat pump type: {self.hp_type}, must be {HP.ASHP} or {HP.WSHP}"
             LOG.error(msg)
             raise ValueError(msg)
 
@@ -126,7 +127,6 @@ class HeatPump(object):
             hp_eff = myLorentz.hp_eff()
 
         elif self.modelling_approach == 'Generic regression':
-            myGenericRegression = GenericRegression()
             duty_x = self.capacity
 
         elif self.modelling_approach == 'Standard test regression':
@@ -155,15 +155,11 @@ class HeatPump(object):
                 hp_duty = myLorentz.calc_duty(self.capacity)
 
             elif self.modelling_approach == 'Generic regression':
-                if self.hp_type == ASHP:
-                    cop = myGenericRegression.ASHP_cop(
+                cop = generic_regression.cop(
+                        self.hp_type,
                         self.flow_temp_source.iloc[timestep],
-                        ambient_temp.iloc[timestep])
-
-                elif self.hp_type == GSHP or self.hp_type == WSHP:
-                    cop = myGenericRegression.GSHP_cop(
-                        self.flow_temp_source.iloc[timestep],
-                        ambient_temp.iloc[timestep])
+                        ambient_temp.iloc[timestep]
+                    )
 
                 # account for defrosting below 5 drg
                 if ambient_temp.iloc[timestep] <= 5:
@@ -186,7 +182,7 @@ class HeatPump(object):
                         self.flow_temp_source.iloc[timestep])
 
                 elif self.data_input == 'Peak performance':
-                    if self.hp_type == ASHP:
+                    if self.hp_type == HP.ASHP:
 
                         if ambient_temp.iloc[timestep] <= 5:
                             cop = 0.9 * myStandardRegression.predict_COP(
