@@ -280,7 +280,7 @@ def findhorn_demand():
     # read in csv
     path = ifiles('pylesa').joinpath('data', 'demand.predicted_heat_demand.csv')
     df = pd.read_csv(path, header=None, names=['dem'])
-    LOG.debug(f'Sum of dem: {df['dem'].sum()}')
+    LOG.debug(f"Sum of dem: {df['dem'].sum()}")
 
     # # Heating from March to November only hot water
     # df['dem'][2160:7320] = 0.5025
