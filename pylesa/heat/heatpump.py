@@ -6,15 +6,12 @@ simple, lorentz, generic regression, and standard test regression
 """
 import math
 import logging
-import pandas as pd
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-from .. import tools as t
 from ..io import inputs
 from ..environment import weather
 
