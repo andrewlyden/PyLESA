@@ -5,6 +5,7 @@ contourpy==1.2.1
 cycler==0.12.1
 et-xmlfile==1.1.0
 exceptiongroup==1.2.1
+flake8==7.0.0
 fonttools==4.51.0
 gekko==1.1.1
 h5py==3.11.0
@@ -14,7 +15,10 @@ joblib==1.4.2
 kiwisolver==1.4.5
 markdown-it-py==3.0.0
 matplotlib==3.8.4
+mccabe==0.7.0
 mdurl==0.1.2
+mypy==1.10.0
+mypy-extensions==1.0.0
 numpy==1.26.4
 openpyxl==3.1.2
 packaging==24.0
@@ -23,6 +27,8 @@ pillow==10.3.0
 pluggy==1.5.0
 progressbar33==2.4
 pvlib==0.10.4
+pycodestyle==2.11.1
+pyflakes==3.2.0
 Pygments==2.17.2
 pyparsing==3.1.2
 pytest==8.2.1

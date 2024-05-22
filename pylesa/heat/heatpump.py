@@ -1,11 +1,11 @@
 import logging
 
-from .constants import HP
+from .models import HP
 from ..environment import weather
 
-from .lorentz import Lorentz
+from .models.lorentz import Lorentz
 from . import generic_regression
-from .standard_regression import StandardTestRegression
+from .models.standard_regression import StandardTestRegression
 
 LOG = logging.getLogger(__name__)
 
@@ -134,9 +134,6 @@ class HeatPump(object):
                 self.standard_test_regression_inputs['data_x'],
                 self.standard_test_regression_inputs['data_COSP'],
                 self.standard_test_regression_inputs['data_duty'])
-            models = myStandardRegression.train()
-            COP_model = models['COP_model']
-            duty_model = models['duty_model']
 
         performance = []
         for timestep in range(8760):
@@ -168,16 +165,14 @@ class HeatPump(object):
                 hp_duty = duty_x
 
             elif self.modelling_approach == 'Standard test regression':
-                hp_duty = myStandardRegression.predict_duty(
-                    duty_model,
+                hp_duty = myStandardRegression.duty(
                     ambient_temp.iloc[timestep],
                     self.flow_temp_source.iloc[timestep])
 
                 # 15% reduction in performance if
                 # data not done to standards
                 if self.data_input == 'Integrated performance' or ambient_temp.iloc[timestep] > 5:
-                    cop = myStandardRegression.predict_COP(
-                        COP_model,
+                    cop = myStandardRegression.cop(
                         ambient_temp.iloc[timestep],
                         self.flow_temp_source.iloc[timestep])
 
@@ -185,8 +180,7 @@ class HeatPump(object):
                     if self.hp_type == HP.ASHP:
 
                         if ambient_temp.iloc[timestep] <= 5:
-                            cop = 0.9 * myStandardRegression.predict_COP(
-                                COP_model,
+                            cop = 0.9 * myStandardRegression.cop(
                                 ambient_temp.iloc[timestep],
                                 self.flow_temp_source.iloc[timestep])
 
