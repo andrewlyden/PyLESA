@@ -1,24 +1,26 @@
 import math
 import logging
 
+from .base import Base
+
 LOG = logging.getLogger(__name__)
 
-class Lorentz(object):
+class Lorentz(Base):
 
-    def __init__(self, cop, flow_temp_spec, return_temp_spec,
-                 ambient_temp_in_spec, ambient_temp_out_spec,
-                 elec_capacity):
-        """lorentz calculations and attributes
+    def __init__(self, cop: float, flow_temp_spec: float, return_temp_spec: float,
+                 ambient_temp_in_spec: float, ambient_temp_out_spec: float,
+                 elec_capacity: float):
+        """Lorentz calculations and attributes
 
-        based on EnergyPRO method
+        Based on EnergyPRO method.
 
         Arguments:
-            cop {float} -- cop at specified conditions
-            flow_temp_spec {float} -- temperature from HP spec
-            return_temp_spec {float} -- tempature to HP spec
-            ambient_temp_in_spec {float} -- specificed
-            ambient_temp_out_spec {float} -- spec
-            elec_capacity {float} -- absolute
+            cop, cop at specified conditions
+            flow_temp_spec, temperature from HP spec
+            return_temp_spec, tempature to HP spec
+            ambient_temp_in_spec, specificed
+            ambient_temp_out_spec, spec
+            elec_capacity, absolute
         """
 
         self.cop = cop
@@ -28,15 +30,15 @@ class Lorentz(object):
         self.ambient_temp_out_spec = ambient_temp_out_spec
         self.elec_capacity = elec_capacity
 
-    def hp_eff(self):
+    def hp_eff(self) -> float:
         """heat pump efficiency which is static
 
-        # calcultaions of the lorentz model. starting with the mean temps fo
-        # for the temp flow and return of heat pump, t high mean
-        # and the ambient in and out temps, t low mean
+        Calculations of the lorentz model. starting with the mean temps fo
+        for the temp flow and return of heat pump, t high mean
+        and the ambient in and out temps, t low mean
 
         Returns:
-            float -- efficiency of the heat pump
+            Efficiency of the heat pump
         """
         t_high_mean = ((self.flow_temp_spec - self.return_temp_spec) /
                        (math.log((self.flow_temp_spec + 273.15) /
@@ -58,22 +60,22 @@ class Lorentz(object):
 
         return hp_eff
 
-    def calc_cop(self, hp_eff, flow_temp, return_temp,
-                 ambient_temp_in, ambient_temp_out):
+    def cop(self, hp_eff: float, flow_temp: float, return_temp: float,
+                 ambient_temp_in: float, ambient_temp_out: float) -> float:
         """cop for timestep
 
-        calculates the cop based upon actual flow/retur and ambient
+        calculates the cop based upon actual flow/return and ambient
         uses heat pump efficiency from before
 
-        Arguments:
-            hp_eff {float} -- heat pump efficiency
-            flow_temp {float} -- flow temperature from heat pump
-            return_temp {float} -- temperature returning to heat pump
-            ambient_temp_in {float} -- real-time
-            ambient_temp_out {float} -- real-time
+        Args:
+            hp_eff, heat pump efficiency
+            flow_temp, flow temperature from heat pump
+            return_temp, temperature returning to heat pump
+            ambient_temp_in, real-time
+            ambient_temp_out , real-time
 
         Returns:
-            float -- cop for timestep
+            Cop for timestep
         """
 
         t_high_mean = ((flow_temp - return_temp) /
@@ -90,7 +92,7 @@ class Lorentz(object):
 
         return cop
 
-    def calc_duty(self, capacity):
+    def duty(self, capacity):
         """duty for timestep
 
         calculates duty for timestep, ensures this is not exceeded

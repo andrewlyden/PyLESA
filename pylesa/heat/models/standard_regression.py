@@ -10,8 +10,8 @@ LOG = logging.getLogger(__name__)
 
 
 class StandardTestRegression(Base):
-    def __init__(self, xarr: pd.Series | np.array, cosparr: pd.Series | np.array,
-                 dutyarr: pd.Series | np.array, degree: int = 2):
+    def __init__(self, xarr: pd.Series | np.ndarray, cosparr: pd.Series | np.ndarray,
+                 dutyarr: pd.Series | np.ndarray, degree: int = 2):
         """Regression analysis based on standard test condition data
 
         Trains a model on initialisation and predicts cop and duty

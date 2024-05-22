@@ -3,9 +3,7 @@ import logging
 from .models import HP
 from ..environment import weather
 
-from .models.lorentz import Lorentz
-from . import generic_regression
-from .models.standard_regression import StandardTestRegression
+from .models import Lorentz, StandardTestRegression, GenericRegression
 
 LOG = logging.getLogger(__name__)
 
@@ -128,6 +126,7 @@ class HeatPump(object):
 
         elif self.modelling_approach == 'Generic regression':
             duty_x = self.capacity
+            myGenericRegression = GenericRegression(self.hp_type)
 
         elif self.modelling_approach == 'Standard test regression':
             myStandardRegression = StandardTestRegression(
@@ -144,16 +143,15 @@ class HeatPump(object):
 
             elif self.modelling_approach == 'Lorentz':
                 ambient_return = ambient_temp.iloc[timestep] - self.ambient_delta_t
-                cop = myLorentz.calc_cop(hp_eff,
+                cop = myLorentz.cop(hp_eff,
                                          self.flow_temp_source.iloc[timestep],
                                          self.return_temp.iloc[timestep],
                                          ambient_temp.iloc[timestep],
                                          ambient_return)
-                hp_duty = myLorentz.calc_duty(self.capacity)
+                hp_duty = myLorentz.duty(self.capacity)
 
             elif self.modelling_approach == 'Generic regression':
-                cop = generic_regression.cop(
-                        self.hp_type,
+                cop = myGenericRegression.cop(
                         self.flow_temp_source.iloc[timestep],
                         ambient_temp.iloc[timestep]
                     )
