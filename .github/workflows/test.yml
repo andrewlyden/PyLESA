@@ -30,4 +30,8 @@ jobs:
       - name: Test with pytest
         working-directory: .
         run: |
-          python -m pytest -svv
+          python -m pytest --cov=pylesa -svv
+      - name: Create coverage badge
+        working-directory: .
+        run: |
+          coverage-badge -o coverage.svg
