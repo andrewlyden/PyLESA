@@ -15,12 +15,12 @@ def wshp():
     return GenericRegression(HP.WSHP)
 
 class TestCop:
-    @pytest.mark.parametrize("hp", ["ashp", "gshp", "wshp"])
-    def test_hp(self, hp, request):
+    @pytest.mark.parametrize("hp,estimate", [("ashp", 2.98), ("gshp", 3.94), ("wshp", 3.94)])
+    def test_hp_cop(self, hp, estimate, request):
         hp = request.getfixturevalue(hp)
         out = hp.cop(50, 10)
         assert isinstance(out, float)
-        assert out > 0
+        assert estimate == round(out, 2)
 
     @pytest.mark.parametrize("hp", ["ashp", "gshp", "wshp"])
     def test_flow_performance(self, hp, request):
@@ -46,12 +46,12 @@ class TestCop:
             ashp.cop(50, 10)
 
 class TestDuty:
-    @pytest.mark.parametrize("hp", ["ashp", "gshp", "wshp"])
-    def test_ashp(self, hp, request):
+    @pytest.mark.parametrize("hp,estimate", [("ashp", 7.9), ("gshp", 12.37), ("wshp", 12.37)])
+    def test_hp_duty(self, hp, estimate, request):
         hp = request.getfixturevalue(hp)
-        out = hp.duty(20)
+        out = hp.duty(10)
         assert isinstance(out, float)
-        assert out > 0
+        assert estimate == round(out, 2)
 
     def test_gshp_vs_ashp(self, ashp, gshp):
         assert gshp.duty(10) > ashp.duty(10)
