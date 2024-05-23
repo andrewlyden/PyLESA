@@ -69,7 +69,7 @@ def day_of_week(year, hour):
     # a = datetime.datetime(year, 1, 1)
     # first_day = a.strftime('%A')
     year = str(year)
-    data = pd.date_range('1/1/' + year, periods=8760, freq='H')
+    data = pd.date_range('1/1/' + year, periods=8760, freq='h')
     day = data[hour].strftime('%A')
     if day == 'Saturday':
         day = 'Sat'

@@ -79,7 +79,7 @@ class Para(object):
             # original capacity input
             capacity = hp_basics['capacity'][0]
             # modify
-            hp_basics['capacity'][0] = self.combos[i][0]
+            hp_basics.loc[0, 'capacity'] = self.combos[i][0]
             # save
             self.input['hp_basics'] = hp_basics
 
@@ -118,7 +118,7 @@ class Para(object):
             # read ts pickle
             ts = self.input['thermal_storage']
             # modify
-            ts['capacity'][0] = self.combos[i][1]
+            ts.loc[0, 'capacity'] = self.combos[i][1]
             # save
             self.input['thermal_storage'] = ts
 

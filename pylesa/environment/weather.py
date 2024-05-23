@@ -55,7 +55,7 @@ class Weather(object):
 
         weather_df.index = pd.date_range('1/1/2012',
                                          periods=8760,
-                                         freq='H')
+                                         freq='h')
         weather_df.columns = [np.array(['wind_speed',
                                         'temperature',
                                         'pressure',
