@@ -1,13 +1,14 @@
 import math
 import logging
 
-from .base import Base
+from .constants import ABS_ZERO
+from .performance import PerformanceModel
 
 LOG = logging.getLogger(__name__)
 
-class Lorentz(Base):
+class Lorentz(PerformanceModel):
 
-    def __init__(self, cop: float, flow_temp_spec: float, return_temp_spec: float,
+    def __init__(self, cop_spec: float, flow_temp_spec: float, return_temp_spec: float,
                  ambient_temp_in_spec: float, ambient_temp_out_spec: float,
                  elec_capacity: float):
         """Lorentz calculations and attributes
@@ -15,7 +16,7 @@ class Lorentz(Base):
         Based on EnergyPRO method.
 
         Arguments:
-            cop, cop at specified conditions
+            cop_spec, cop at specified conditions
             flow_temp_spec, temperature from HP spec
             return_temp_spec, tempature to HP spec
             ambient_temp_in_spec, specificed
@@ -23,7 +24,7 @@ class Lorentz(Base):
             elec_capacity, absolute
         """
 
-        self.cop = cop
+        self.cop_spec = cop_spec
         self.flow_temp_spec = flow_temp_spec
         self.return_temp_spec = return_temp_spec
         self.ambient_temp_in_spec = ambient_temp_in_spec
@@ -41,13 +42,13 @@ class Lorentz(Base):
             Efficiency of the heat pump
         """
         t_high_mean = ((self.flow_temp_spec - self.return_temp_spec) /
-                       (math.log((self.flow_temp_spec + 273.15) /
-                                 (self.return_temp_spec + 273.15))))
+                       (math.log((self.flow_temp_spec + ABS_ZERO) /
+                                 (self.return_temp_spec + ABS_ZERO))))
 
         t_low_mean = (
             (self.ambient_temp_in_spec - self.ambient_temp_out_spec) /
-            (math.log((self.ambient_temp_in_spec + 273.15) /
-                      (self.ambient_temp_out_spec + 273.15))))
+            (math.log((self.ambient_temp_in_spec + ABS_ZERO) /
+                      (self.ambient_temp_out_spec + ABS_ZERO))))
 
         # lorentz cop is the highest theoretical cop
         cop_lorentz = t_high_mean / (t_high_mean - t_low_mean)
@@ -56,11 +57,11 @@ class Lorentz(Base):
         # the lorentz cop is calcualted for each timestep
         # then this is multiplied by the heat pump
         # efficiency to give actual cop
-        hp_eff = self.cop / cop_lorentz
+        hp_eff = self.cop_spec / cop_lorentz
 
         return hp_eff
 
-    def cop(self, hp_eff: float, flow_temp: float, return_temp: float,
+    def cop(self, flow_temp: float, return_temp: float,
                  ambient_temp_in: float, ambient_temp_out: float) -> float:
         """cop for timestep
 
@@ -68,7 +69,6 @@ class Lorentz(Base):
         uses heat pump efficiency from before
 
         Args:
-            hp_eff, heat pump efficiency
             flow_temp, flow temperature from heat pump
             return_temp, temperature returning to heat pump
             ambient_temp_in, real-time
@@ -79,16 +79,16 @@ class Lorentz(Base):
         """
 
         t_high_mean = ((flow_temp - return_temp) /
-                       (math.log((flow_temp + 273.15) /
-                                 (return_temp + 273.15))))
+                       (math.log((flow_temp + ABS_ZERO) /
+                                 (return_temp + ABS_ZERO))))
 
         t_low_mean = ((ambient_temp_in - ambient_temp_out) /
-                      (math.log((ambient_temp_in + 273.15) /
-                                (ambient_temp_out + 273.15))))
+                      (math.log((ambient_temp_in + ABS_ZERO) /
+                                (ambient_temp_out + ABS_ZERO))))
 
         cop_lorentz = t_high_mean / (t_high_mean - t_low_mean)
 
-        cop = hp_eff * cop_lorentz
+        cop = self.hp_eff() * cop_lorentz
 
         return cop
 
@@ -104,7 +104,7 @@ class Lorentz(Base):
             float -- duty is the thermal output of the heat pump
         """
 
-        duty_max = self.cop * self.elec_capacity
+        duty_max = self.cop_spec * self.elec_capacity
         if duty_max >= capacity:
             duty = capacity
         elif duty_max < capacity:

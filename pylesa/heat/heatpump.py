@@ -1,15 +1,13 @@
 import logging
+import numpy as np
 
-from .models import HP
+from .models import HP, Lorentz, StandardTestRegression, GenericRegression, PerformanceData, PerformanceModel, Simple
+from ..constants import ANNUAL_HOURS
 from ..environment import weather
-
-from .models import Lorentz, StandardTestRegression, GenericRegression
 
 LOG = logging.getLogger(__name__)
 
-
 class HeatPump(object):
-
     def __init__(self, hp_type, modelling_approach,
                  capacity, ambient_delta_t,
                  minimum_runtime, minimum_output, data_input,
@@ -42,9 +40,10 @@ class HeatPump(object):
             generic_regression_inputs {dic} -- (default: {None})
             standard_test_regression_inputs {dic} -- (default: {None})
         """
+        self._model = None
+        self.model = modelling_approach
 
         self.hp_type = HP[hp_type]
-        self.modelling_approach = modelling_approach
         self.capacity = capacity
         self.ambient_delta_t = ambient_delta_t
         self.minimum_runtime = minimum_runtime
@@ -58,6 +57,53 @@ class HeatPump(object):
         self.lorentz_inputs = lorentz_inputs
         self.generic_regression_inputs = generic_regression_inputs
         self.standard_test_regression_inputs = standard_test_regression_inputs
+
+    @property
+    def model(self) -> PerformanceModel:
+        return self._model
+    
+    @model.setter
+    def model(self, approach):
+        match approach:
+            case "Simple":
+                if self.simple_cop is None:
+                    msg = f"Heat pump performance model ({Simple}) cannot be initiated with simple_cop=None"
+                    LOG.error(msg)
+                    raise ValueError(msg)
+                self._model = Simple(self.simple_cop, self.capacity)
+
+            case "Lorentz":
+                if self.lorentz_inputs is None:
+                    msg = f"Heat pump performance model ({Lorentz}) cannot be initiated with lorentz_inputs=None"
+                    LOG.error(msg)
+                    raise ValueError(msg)
+                self._model = Lorentz(self.lorentz_inputs['cop'],
+                    self.lorentz_inputs['flow_temp_spec'],
+                    self.lorentz_inputs['return_temp_spec'],
+                    self.lorentz_inputs['temp_ambient_in_spec'],
+                    self.lorentz_inputs['temp_ambient_out_spec'],
+                    self.lorentz_inputs['elec_capacity']
+                )
+
+            case "Generic regression":
+                # Raises error if hp_type is invalid
+                self._model = GenericRegression(self.hp_type)
+
+            case "Standard test regression":
+                if self.standard_test_regression_inputs is None:
+                    msg = f"Heat pump performance model ({StandardTestRegression}) cannot be initiated with standard_test_regression_inputs=None"
+                    LOG.error(msg)
+                    raise ValueError(msg)
+                self._model = StandardTestRegression(
+                    self.standard_test_regression_inputs['data_x'],
+                    self.standard_test_regression_inputs['data_COSP'],
+                    self.standard_test_regression_inputs['data_duty']
+                )
+            
+            case _:
+                msg = f"Performance model {approach} is not valid"
+                LOG.error(msg)
+                raise KeyError(msg)
 
     def heat_resource(self):
         """accessing the heat resource
@@ -88,8 +134,8 @@ class HeatPump(object):
             msg = f"Invalid heat pump type: {self.hp_type}, must be {HP.ASHP} or {HP.WSHP}"
             LOG.error(msg)
             raise ValueError(msg)
-
-    def performance(self):
+    
+    def performance(self) -> PerformanceData:
         """performance over year of heat pump
 
         input a timestep from which gathers inputs
@@ -98,79 +144,52 @@ class HeatPump(object):
         outputs are dict containing
 
         Returns:
-            dic -- cop and duty for each hour timestep in year
+            Performance object defining cop and duty for each hour timestep in year
         """
         if self.capacity == 0:
-            performance = []
-            for timesteps in range(8760):
-                # cop needs to be low to not break the mpc solver
-                # duty being zero means it won't choose it anyway
-                p = {'cop': 0.5, 'duty': 0}
-                performance.append(p)
-            return performance
+            # TODO: change mpc to be clearer about how it uses cop and duty
+            # cop needs to be low to not break the mpc solver
+            # duty being zero means it won't choose it anyway
+            cop = np.empty((ANNUAL_HOURS,)).fill(0.5)
+            duty = np.zeros((ANNUAL_HOURS,))
+            return PerformanceData(cop, duty)
 
         ambient_temp = self.heat_resource()['ambient_temp']
 
-        if self.modelling_approach == 'Simple':
-            cop_x = self.simple_cop
-            duty_x = self.capacity
+        duty_x = self.capacity
 
-        elif self.modelling_approach == 'Lorentz':
-            myLorentz = Lorentz(self.lorentz_inputs['cop'],
-                                self.lorentz_inputs['flow_temp_spec'],
-                                self.lorentz_inputs['return_temp_spec'],
-                                self.lorentz_inputs['temp_ambient_in_spec'],
-                                self.lorentz_inputs['temp_ambient_out_spec'],
-                                self.lorentz_inputs['elec_capacity'])
-            hp_eff = myLorentz.hp_eff()
+        match self.model.__class__:
+            case Simple.__class__:
+                return PerformanceData(
+                    self.model.cop,
+                    self.model.duty
+                )
 
-        elif self.modelling_approach == 'Generic regression':
-            duty_x = self.capacity
-            myGenericRegression = GenericRegression(self.hp_type)
+            case Lorentz.__class__:
+                return PerformanceData(
+                    self.model.cop(
+                        self.flow_temp_source.iloc[timestep],
+                        self.return_temp.iloc[timestep],
+                        ambient_temp.iloc[timestep],
+                        ambient_return
+                    ),
+                    self.model.duty(self.capacity)
+                )
 
-        elif self.modelling_approach == 'Standard test regression':
-            myStandardRegression = StandardTestRegression(
-                self.standard_test_regression_inputs['data_x'],
-                self.standard_test_regression_inputs['data_COSP'],
-                self.standard_test_regression_inputs['data_duty'])
-
-        performance = []
-        for timestep in range(8760):
-
-            if self.modelling_approach == 'Simple':
-                cop = cop_x
-                hp_duty = duty_x
-
-            elif self.modelling_approach == 'Lorentz':
-                ambient_return = ambient_temp.iloc[timestep] - self.ambient_delta_t
-                cop = myLorentz.cop(hp_eff,
-                                         self.flow_temp_source.iloc[timestep],
-                                         self.return_temp.iloc[timestep],
-                                         ambient_temp.iloc[timestep],
-                                         ambient_return)
-                hp_duty = myLorentz.duty(self.capacity)
-
-            elif self.modelling_approach == 'Generic regression':
-                cop = myGenericRegression.cop(
+            case GenericRegression.__class__:
+                return PerformanceData(
+                    self.model.cop(
                         self.flow_temp_source.iloc[timestep],
                         ambient_temp.iloc[timestep]
-                    )
+                    ),
+                    duty_x
+                )
 
-                # account for defrosting below 5 drg
-                if ambient_temp.iloc[timestep] <= 5:
-                    cop = 0.9 * cop
-
-                hp_duty = duty_x
-
-            elif self.modelling_approach == 'Standard test regression':
-                hp_duty = myStandardRegression.duty(
-                    ambient_temp.iloc[timestep],
-                    self.flow_temp_source.iloc[timestep])
-
+            case StandardTestRegression.__class__:
                 # 15% reduction in performance if
                 # data not done to standards
                 if self.data_input == 'Integrated performance' or ambient_temp.iloc[timestep] > 5:
-                    cop = myStandardRegression.cop(
+                    cop = self.model.cop(
                         ambient_temp.iloc[timestep],
                         self.flow_temp_source.iloc[timestep])
 
@@ -178,14 +197,26 @@ class HeatPump(object):
                     if self.hp_type == HP.ASHP:
 
                         if ambient_temp.iloc[timestep] <= 5:
-                            cop = 0.9 * myStandardRegression.cop(
+                            cop = 0.9 * self.model.cop(
                                 ambient_temp.iloc[timestep],
                                 self.flow_temp_source.iloc[timestep])
-
-            d = {'cop': cop, 'duty': hp_duty}
-            performance.append(d)
-
-        return performance
+                    else:
+                        msg = f"Peak performance option not available for {self.hp_type}"
+                        LOG.error(msg)
+                        raise ValueError(msg)
+                else:
+                    msg = f"{self.data_input} is not valid for {self.model.__class__}"
+                    LOG.error(msg)
+                    raise ValueError(msg)
+                    
+                return PerformanceData(
+                    cop,
+                    self.model.duty(
+                        ambient_temp.iloc[timestep],
+                        self.flow_temp_source.iloc[timestep]
+                    )
+                )
+            
 
     def elec_usage(self, demand, hp_performance):
         """electricity usage of hp for timestep given a thermal demand

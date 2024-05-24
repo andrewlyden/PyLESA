@@ -4,12 +4,12 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-from .base import Base
+from .performance import PerformanceModel
 
 LOG = logging.getLogger(__name__)
 
 
-class StandardTestRegression(Base):
+class StandardTestRegression(PerformanceModel):
     def __init__(self, xarr: pd.Series | np.ndarray, cosparr: pd.Series | np.ndarray,
                  dutyarr: pd.Series | np.ndarray, degree: int = 2):
         """Regression analysis based on standard test condition data
