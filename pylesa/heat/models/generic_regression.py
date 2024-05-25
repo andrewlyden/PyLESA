@@ -12,11 +12,19 @@ LOG = logging.getLogger(__name__)
 
 class GenericRegression(PerformanceModel):
     def __init__(self, pump: HP):
+        self.pump = pump
+
+    @property
+    def pump(self):
+        return self._pump
+    
+    @pump.setter
+    def pump(self, pump):
         if pump not in HP:
             msg = f"{pump} is not a valid heat pump option, must be one of {[HP.ASHP, HP.GSHP, HP.WSHP]}"
             LOG.error(msg)
             raise KeyError(msg)
-        self.pump = pump
+        self._pump = pump
 
     def cop(self, flow_temp: np.ndarray[float], ambient_temp: np.ndarray[float]) -> np.ndarray[float]:
         # account for defrosting below 5 drg

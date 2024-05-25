@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import pandas as pd
 
 from .models import HP, Lorentz, StandardTestRegression, GenericRegression, PerformanceData, PerformanceModel, Simple
 from ..constants import ANNUAL_HOURS
@@ -8,16 +9,22 @@ from ..environment import weather
 LOG = logging.getLogger(__name__)
 
 class HeatPump(object):
-    def __init__(self, hp_type, modelling_approach,
-                 capacity, ambient_delta_t,
-                 minimum_runtime, minimum_output, data_input,
-                 flow_temp_source, return_temp,
-                 hp_ambient_temp,
-                 simple_cop=None,
-                 lorentz_inputs=None,
-                 generic_regression_inputs=None,
-                 standard_test_regression_inputs=None
-                 ):
+    def __init__(self,
+            hp_type: HP,
+            modelling_approach: str,
+            capacity: float,
+            ambient_delta_t: float,
+            minimum_runtime: float,
+            minimum_output: float,
+            data_input: str,
+            flow_temp_source: pd.DataFrame,
+            return_temp: pd.DataFrame,
+            hp_ambient_temp: pd.DataFrame,
+            simple_cop: float = None,
+            lorentz_inputs: dict = None,
+            generic_regression_inputs: dict = None,
+            standard_test_regression_inputs: dict = None
+        ):
         """heat pump class object
 
         Arguments:
@@ -25,9 +32,9 @@ class HeatPump(object):
             modelling_approach {str} -- simple, lorentz,
                                         generic, standard regression
             capacity {float} -- thermal capacity of heat pump
-            ambient_delta_t {int} -- drop in ambient source temperature
+            ambient_delta_t {float} -- drop in ambient source temperature
                                      from inlet to outlet
-            minimum_runtime {string} -- fixed or variable speed compressor
+            minimum_runtime {float} -- fixed or variable speed compressor
             data_input {str} -- type of data input, peak or integrated
             flow_temp {dataframe} -- required temperatures out of HP
             return_temp {dataframe} -- inlet temp to HP
@@ -168,38 +175,37 @@ class HeatPump(object):
             case Lorentz.__class__:
                 return PerformanceData(
                     self.model.cop(
-                        self.flow_temp_source.iloc[timestep],
-                        self.return_temp.iloc[timestep],
-                        ambient_temp.iloc[timestep],
-                        ambient_return
+                        self.flow_temp_source.values,
+                        self.return_temp.values,
+                        ambient_temp.values,
+                        ambient_temp.values - self.ambient_delta_t
                     ),
-                    self.model.duty(self.capacity)
+                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty(self.capacity))
                 )
 
             case GenericRegression.__class__:
                 return PerformanceData(
                     self.model.cop(
-                        self.flow_temp_source.iloc[timestep],
-                        ambient_temp.iloc[timestep]
+                        self.flow_temp_source.values,
+                        ambient_temp.values
                     ),
-                    duty_x
+                    np.empty((ANNUAL_HOURS,)).fill(duty_x)
                 )
 
-            case StandardTestRegression.__class__:
+            case StandardTestRegression.__class__:                
+                cop = self.model.cop(
+                    ambient_temp.values,
+                    self.flow_temp_source.values)
+
                 # 15% reduction in performance if
                 # data not done to standards
-                if self.data_input == 'Integrated performance' or ambient_temp.iloc[timestep] > 5:
-                    cop = self.model.cop(
-                        ambient_temp.iloc[timestep],
-                        self.flow_temp_source.iloc[timestep])
-
+                if self.data_input == 'Integrated performance' or ambient_temp > 5:
+                    factor = 1.
                 elif self.data_input == 'Peak performance':
                     if self.hp_type == HP.ASHP:
-
-                        if ambient_temp.iloc[timestep] <= 5:
-                            cop = 0.9 * self.model.cop(
-                                ambient_temp.iloc[timestep],
-                                self.flow_temp_source.iloc[timestep])
+                        factor = np.ones(ambient_temp.shape)
+                        sub_5 = ambient_temp <= 5.
+                        factor[sub_5] = 0.9
                     else:
                         msg = f"Peak performance option not available for {self.hp_type}"
                         LOG.error(msg)
@@ -210,10 +216,10 @@ class HeatPump(object):
                     raise ValueError(msg)
                     
                 return PerformanceData(
-                    cop,
+                    cop * factor,
                     self.model.duty(
-                        ambient_temp.iloc[timestep],
-                        self.flow_temp_source.iloc[timestep]
+                        ambient_temp,
+                        self.flow_temp_source
                     )
                 )
             

@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import logging
 
 from .constants import ABS_ZERO
@@ -61,29 +62,28 @@ class Lorentz(PerformanceModel):
 
         return hp_eff
 
-    def cop(self, flow_temp: float, return_temp: float,
-                 ambient_temp_in: float, ambient_temp_out: float) -> float:
-        """cop for timestep
+    def cop(self, flow_temp: np.ndarray[float], return_temp: np.ndarray[float],
+                 ambient_temp_in: np.ndarray[float], ambient_temp_out: np.ndarray[float]) -> float:
+        """Array COP calculation
 
-        calculates the cop based upon actual flow/return and ambient
+        Calculates the cop based upon actual flow/return and ambient
         uses heat pump efficiency from before
 
         Args:
-            flow_temp, flow temperature from heat pump
-            return_temp, temperature returning to heat pump
+            flow_temp, flow temperatures from heat pump
+            return_temp, temperatures returning to heat pump
             ambient_temp_in, real-time
             ambient_temp_out , real-time
 
         Returns:
             Cop for timestep
         """
-
         t_high_mean = ((flow_temp - return_temp) /
-                       (math.log((flow_temp + ABS_ZERO) /
+                       (np.log((flow_temp + ABS_ZERO) /
                                  (return_temp + ABS_ZERO))))
 
         t_low_mean = ((ambient_temp_in - ambient_temp_out) /
-                      (math.log((ambient_temp_in + ABS_ZERO) /
+                      (np.log((ambient_temp_in + ABS_ZERO) /
                                 (ambient_temp_out + ABS_ZERO))))
 
         cop_lorentz = t_high_mean / (t_high_mean - t_low_mean)
@@ -92,10 +92,10 @@ class Lorentz(PerformanceModel):
 
         return cop
 
-    def duty(self, capacity):
-        """duty for timestep
+    def duty(self, capacity: float) -> float:
+        """Duty calculation
 
-        calculates duty for timestep, ensures this is not exceeded
+        Ensures capacity is not exceeded.
 
         Arguments:
             capacity {float} -- electrical capacity of heat pump
@@ -103,7 +103,6 @@ class Lorentz(PerformanceModel):
         Returns:
             float -- duty is the thermal output of the heat pump
         """
-
         duty_max = self.cop_spec * self.elec_capacity
         if duty_max >= capacity:
             duty = capacity
