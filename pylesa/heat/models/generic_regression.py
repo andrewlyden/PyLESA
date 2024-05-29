@@ -20,13 +20,14 @@ class GenericRegression(PerformanceModel):
     
     @pump.setter
     def pump(self, pump):
-        if pump not in HP:
-            msg = f"{pump} is not a valid heat pump option, must be one of {[HP.ASHP, HP.GSHP, HP.WSHP]}"
+        if not isinstance(pump, HP):
+            msg = f"{pump} is not a valid heat pump option, must be one of {[_.value for _ in HP]}"
             LOG.error(msg)
             raise KeyError(msg)
         self._pump = pump
 
     def cop(self, flow_temp: np.ndarray[float], ambient_temp: np.ndarray[float]) -> np.ndarray[float]:
+        """Array based COP calculation"""
         # account for defrosting below 5 drg
         factor = np.ones(flow_temp.shape)
         sub_5 = ambient_temp <= 5.
@@ -52,6 +53,7 @@ class GenericRegression(PerformanceModel):
                 raise KeyError(msg)
 
     def duty(self, ambient_temp: np.ndarray[float]) -> np.ndarray[float]:
+        """Array based duty calculation"""
         match self.pump:
 
             case HP.ASHP:
