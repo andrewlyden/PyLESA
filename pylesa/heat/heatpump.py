@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from .models import HP, Lorentz, StandardTestRegression, GenericRegression, PerformanceData, PerformanceModel, Simple
+from .models import HP, Lorentz, StandardTestRegression, GenericRegression, PerformanceArray, PerformanceModel, PerformanceValue, Simple
 from ..constants import ANNUAL_HOURS
 from ..environment import weather
 
@@ -142,7 +142,7 @@ class HeatPump(object):
             LOG.error(msg)
             raise ValueError(msg)
     
-    def performance(self) -> PerformanceData:
+    def performance(self) -> PerformanceArray:
         """performance over year of heat pump
 
         input a timestep from which gathers inputs
@@ -159,7 +159,7 @@ class HeatPump(object):
             # duty being zero means it won't choose it anyway
             cop = np.empty((ANNUAL_HOURS,)).fill(0.5)
             duty = np.zeros((ANNUAL_HOURS,))
-            return PerformanceData(cop, duty)
+            return PerformanceArray(cop, duty)
 
         ambient_temp = self.heat_resource()['ambient_temp']
 
@@ -167,13 +167,13 @@ class HeatPump(object):
 
         match self.model.__class__:
             case Simple.__class__:
-                return PerformanceData(
+                return PerformanceArray(
                     self.model.cop,
                     self.model.duty
                 )
 
             case Lorentz.__class__:
-                return PerformanceData(
+                return PerformanceArray(
                     self.model.cop(
                         self.flow_temp_source.values,
                         self.return_temp.values,
@@ -184,7 +184,7 @@ class HeatPump(object):
                 )
 
             case GenericRegression.__class__:
-                return PerformanceData(
+                return PerformanceArray(
                     self.model.cop(
                         self.flow_temp_source.values,
                         ambient_temp.values
@@ -215,7 +215,7 @@ class HeatPump(object):
                     LOG.error(msg)
                     raise ValueError(msg)
                     
-                return PerformanceData(
+                return PerformanceArray(
                     cop * factor,
                     self.model.duty(
                         ambient_temp,
@@ -224,7 +224,7 @@ class HeatPump(object):
                 )
             
 
-    def elec_usage(self, demand, hp_performance):
+    def elec_usage(self, demand: float, hp_performance: PerformanceValue) -> dict[str, float]:
         """electricity usage of hp for timestep given a thermal demand
 
         calculates the electrical usage of the heat pump given a heat demand
@@ -233,10 +233,8 @@ class HeatPump(object):
         (only non-zero for fixed speed HP)
 
         Arguments:
-            timestep {int} -- timestep to be calculated
-            demand {float} -- thermal demand to be met by heat pump
-            hp_performance {dic} -- dic containing the cop and duty
-                                    for timesteps over year
+            demand, thermal demand to be met by heat pump
+            hp_performance, PerformanceValue at specific timestep
 
         Returns:
             dic -- heat demand to be met, cop, duty,
@@ -246,29 +244,24 @@ class HeatPump(object):
         if self.capacity == 0:
             return {'hp_demand': 0.0, 'hp_elec': 0.0}
 
-        cop = hp_performance['cop']
-        duty = hp_performance['duty']
-
-        max_elec_usage = demand / cop
-        max_elec_cap = duty / cop
+        max_elec_usage = demand / hp_performance.cop
+        max_elec_cap = hp_performance.duty / hp_performance.cop
         hp_elec = min(max_elec_usage, max_elec_cap)
-        hp_demand = hp_elec * cop
+        hp_demand = hp_elec * hp_performance.cop
 
         d = {'hp_demand': hp_demand,
              'hp_elec': hp_elec}
 
         return d
 
-    def thermal_output(self, elec_supply,
-                       hp_performance, heat_demand):
+    def thermal_output(self, elec_supply: float,
+                       hp_performance: PerformanceValue, heat_demand: float) -> dict[str, float]:
         """thermal output from a given electricity supply
 
         Arguments:
-            timestep {int} -- timestep to be modelled
-            elec_supply {float} -- electricity supply used by heat pump
-            hp_performance {dic} -- dic containing the cop and duty
-                                    for timesteps over year
-            heat_demand {float} -- heat demand to be met of timestep
+            elec_supply, electricity supply used by heat pump
+            hp_performance, PerformanceValue at specific timestep
+            heat_demand, heat demand to be met of timestep
 
         Returns:
             dic -- max_thermal_output, heat demand met by hp,
@@ -278,15 +271,12 @@ class HeatPump(object):
         if self.capacity == 0:
             return {'hp_demand': 0.0, 'hp_elec': 0.0}
 
-        cop = hp_performance['cop']
-        duty = hp_performance['duty']
-
         # maximum thermal output given elec supply
-        max_thermal_output = elec_supply * cop
+        max_thermal_output = elec_supply * hp_performance.cop
 
         # demand met by hp is min of three arguments
-        hp_demand = min(max_thermal_output, heat_demand, duty)
-        hp_elec = hp_demand / cop
+        hp_demand = min(max_thermal_output, heat_demand, hp_performance.duty)
+        hp_elec = hp_demand / hp_performance.cop
 
         d = {'hp_demand': hp_demand,
              'hp_elec': hp_elec}

@@ -18,6 +18,7 @@ from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 from .. import initialise_classes
 from ..io import inputs
 from ..constants import OUTDIR
+from ..heat.models import PerformanceValue
 
 LOG = logging.getLogger(__name__)
 
@@ -233,8 +234,8 @@ class FixedOrder(object):
         results['grid']['deficit'] = deficit
         results['grid']['match'] = surplus - deficit
         results['grid']['import_price'] = self.import_price[timestep]
-        results['HP']['cop'] = hp_performance['cop']
-        results['HP']['duty'] = hp_performance['duty']
+        results['HP']['cop'] = hp_performance.cop
+        results['HP']['duty'] = hp_performance.duty
 
         order_above_setpoint = self.fixed_order_info['order_above_setpoint']
         key = self.process_key()['above']
@@ -395,7 +396,7 @@ class FixedOrder(object):
         # IF NOT AVAILABLE CAP THEN DONT RUN HP
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
-                   100.0 * hp_performance['duty'])
+                   100.0 * hp_performance.duty)
         hp_usage = results['HP']['heat_total_output']
 
         # need to change results if threshold not met
@@ -506,8 +507,8 @@ class FixedOrder(object):
         results['grid']['match'] = surplus - deficit
         results['grid']['import_price'] = self.import_price[timestep]
         results['grid']['export_price'] = self.export_price
-        results['HP']['cop'] = hp_performance['cop']
-        results['HP']['duty'] = hp_performance['duty']
+        results['HP']['cop'] = hp_performance.cop
+        results['HP']['duty'] = hp_performance.duty
 
         order_below_setpoint = self.fixed_order_info['order_below_setpoint']
         key = self.process_key()['below']
@@ -670,7 +671,7 @@ class FixedOrder(object):
         # IF NOT AVAILABLE CAP THEN DONT RUN HP
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
-                   100.0 * hp_performance['duty'])
+                   100.0 * hp_performance.duty)
         hp_usage = results['HP']['heat_total_output']
 
         # need to change results if threshold not met
@@ -1102,12 +1103,12 @@ class FixedOrder(object):
 
         return import_elec_demand
 
-    def HP_RES_to_demand(self, hp_usage, RES_left, hp_performance, heat_unmet):
+    def HP_RES_to_demand(self, hp_usage, RES_left, hp_performance: PerformanceValue, heat_unmet):
 
         # USE HEAT PUMP WITH SURPLUS TO MEET HEAT DEMAND
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # hpr - heat pump renewable
@@ -1141,7 +1142,7 @@ class FixedOrder(object):
         # TO MEET HEAT DEMAND
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # min of dem unmet and spare hp capacity
@@ -1189,7 +1190,7 @@ class FixedOrder(object):
             es_discharging, hp_performance, heat_unmet)
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # thermal output from heat pump running on renewables
@@ -1212,11 +1213,11 @@ class FixedOrder(object):
 
         # CHARGE THERMAL STORAGE WITH HEAT PUMP DRIVEN BY SURPLUS
 
-        duty = hp_performance['duty']
+        duty = hp_performance.duty
         # capacity of heat pump leftover
         hp_cap_left = duty - hp_usage
         # max heat from heat pump running surplus
-        hp_max_RES = RES_left * hp_performance['cop']
+        hp_max_RES = RES_left * hp_performance.cop
         hp_left = min(hp_cap_left, hp_max_RES)
         # how much can be input into the hot water tank
         state = 'charging'
@@ -1262,7 +1263,7 @@ class FixedOrder(object):
         # spare heat pump capacity
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
         # spare tank capacity
         state = 'charging'
