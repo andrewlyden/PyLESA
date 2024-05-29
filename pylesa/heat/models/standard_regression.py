@@ -80,7 +80,7 @@ class StandardTestRegression(PerformanceModel):
             flow: flow temperature to predict COP
 
         Returns:
-            Predicted COP value
+            Predicted duty value
         """
         x_pred = np.array([ambient, flow]).swapaxes(0, 1)
         poly = PolynomialFeatures(degree=2, include_bias=False)

@@ -165,59 +165,6 @@ class FixedOrder(object):
         # stop progress bar
         pbar.finish()
 
-        # ES_to_demand = []
-        # ES_to_HP_to_demand = []
-        # RES_to_ES = []
-        # import_for_ES = []
-        # soc = []
-
-        # # TSd = []
-        # IC = []
-        # surplus = []
-        # # hd = []
-        # export = []
-        # for i in range(timesteps):
-        #     ES_to_demand.append(-1 * results[i]['ES']['discharging_to_demand'])
-        #     ES_to_HP_to_demand.append(-1 * results[i]['ES']['discharging_to_HP'])
-        #     RES_to_ES.append(results[i]['ES']['charging_from_RES'])
-        #     import_for_ES.append(results[i]['ES']['charging_from_import'])
-        #     soc.append(results[i]['ES']['final_soc'])
-        #     # TSd.append(results[i]['TS']['discharging_total'])
-        #     IC.append(results[i]['grid']['import_price'])
-        #     surplus.append(results[i]['grid']['surplus'])
-        #     # hd.append(results[i]['heat_demand']['heat_demand'])
-        #     export.append(results[i]['grid']['total_export'])
-
-        # # Plot solution
-        # time = range(first_hour, final_hour)
-        # plt.figure()
-        # plt.subplot(4, 1, 1)
-        # plt.plot(time, ES_to_demand, 'r', linewidth=2)
-        # plt.plot(time, ES_to_HP_to_demand, 'y', linewidth=2)
-        # plt.plot(time, RES_to_ES, 'b', linewidth=2)
-        # plt.plot(time, import_for_ES, 'g', linewidth=2)
-        # plt.ylabel('ES charging/discharging')
-        # plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
-        # plt.subplot(4, 1, 2)
-        # plt.plot(time, soc, 'r', linewidth=2)
-        # plt.legend(['SOC'], loc='best')
-        # plt.ylabel('SOC')
-        # plt.subplot(4, 1, 3)
-        # plt.plot(time, IC, 'g', linewidth=2)
-        # plt.legend(['Import cost'], loc='best')
-        # plt.ylabel('Import cost')
-        # plt.subplot(4, 1, 4)
-        # plt.plot(time, surplus, 'm', linewidth=2)
-        # plt.plot(time, export, 'b', linewidth=2)
-        # plt.legend(['surplus', 'export'], loc='best')
-        # plt.ylabel('Surplus, and export')
-        # # plt.plot(time, TSc, 'r', linewidth=2)
-        # # plt.plot(time, TSd, 'g', linewidth=2)
-        # # plt.legend(['TSc', 'TSd'], loc='best')
-        # # plt.ylabel('Charging/discharging')
-        # plt.xlabel('Time')
-        # plt.show()
-
         # write the outputs to a pickle
         file = self.root / OUTDIR / self.subname / 'outputs.pkl'
         with open(file, 'wb') as output_file:
