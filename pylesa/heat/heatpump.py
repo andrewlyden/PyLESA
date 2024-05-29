@@ -47,9 +47,6 @@ class HeatPump(object):
             generic_regression_inputs {dic} -- (default: {None})
             standard_test_regression_inputs {dic} -- (default: {None})
         """
-        self._model = None
-        self.model = modelling_approach
-
         self.hp_type = HP[hp_type]
         self.capacity = capacity
         self.ambient_delta_t = ambient_delta_t
@@ -64,6 +61,9 @@ class HeatPump(object):
         self.lorentz_inputs = lorentz_inputs
         self.generic_regression_inputs = generic_regression_inputs
         self.standard_test_regression_inputs = standard_test_regression_inputs
+
+        self._model = None
+        self.model = modelling_approach
 
     @property
     def model(self) -> PerformanceModel:
@@ -145,11 +145,6 @@ class HeatPump(object):
     def performance(self) -> PerformanceArray:
         """performance over year of heat pump
 
-        input a timestep from which gathers inputs
-        a method for calculating the heat pump performance (cop and duty)
-        for a timetsp
-        outputs are dict containing
-
         Returns:
             Performance object defining cop and duty for each hour timestep in year
         """
@@ -165,14 +160,14 @@ class HeatPump(object):
 
         duty_x = self.capacity
 
-        match self.model.__class__:
-            case Simple.__class__:
+        match self.model:
+            case Simple():
                 return PerformanceArray(
-                    self.model.cop,
-                    self.model.duty
+                    np.empty((ANNUAL_HOURS,)).fill(self.model.cop),
+                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty)
                 )
 
-            case Lorentz.__class__:
+            case Lorentz():
                 return PerformanceArray(
                     self.model.cop(
                         self.flow_temp_source.values,
@@ -183,7 +178,7 @@ class HeatPump(object):
                     np.empty((ANNUAL_HOURS,)).fill(self.model.duty(self.capacity))
                 )
 
-            case GenericRegression.__class__:
+            case GenericRegression():
                 return PerformanceArray(
                     self.model.cop(
                         self.flow_temp_source.values,
@@ -192,20 +187,21 @@ class HeatPump(object):
                     np.empty((ANNUAL_HOURS,)).fill(duty_x)
                 )
 
-            case StandardTestRegression.__class__:                
+            case StandardTestRegression():
                 cop = self.model.cop(
                     ambient_temp.values,
-                    self.flow_temp_source.values)
+                    self.flow_temp_source.values
+                )
 
                 # 15% reduction in performance if
                 # data not done to standards
-                if self.data_input == 'Integrated performance' or ambient_temp > 5:
+                # TODO: check this logic against original code
+                factor = np.ones(ambient_temp.shape)
+                if self.data_input == 'Integrated performance':
                     factor = 1.
                 elif self.data_input == 'Peak performance':
                     if self.hp_type == HP.ASHP:
-                        factor = np.ones(ambient_temp.shape)
-                        sub_5 = ambient_temp <= 5.
-                        factor[sub_5] = 0.9
+                        factor[ambient_temp <= 5.] = 0.9
                     else:
                         msg = f"Peak performance option not available for {self.hp_type}"
                         LOG.error(msg)
@@ -223,6 +219,10 @@ class HeatPump(object):
                     )
                 )
             
+            case _:
+                msg = f"Performance of {self.model} cannot be calculated"
+                LOG.error(msg)
+                raise ValueError(msg)
 
     def elec_usage(self, demand: float, hp_performance: PerformanceValue) -> dict[str, float]:
         """electricity usage of hp for timestep given a thermal demand

@@ -56,7 +56,7 @@ class StandardTestRegression(PerformanceModel):
         self._copmodel = model_cop
         self._dutymodel = model_duty
 
-    def cop(self, ambient: float, flow: float) -> float:
+    def cop(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
         """Predicts COP from regression model
         
         Args:
@@ -66,13 +66,13 @@ class StandardTestRegression(PerformanceModel):
         Returns:
             Predicted COP value
         """
-        x_pred = np.array([ambient, flow]).reshape(1, -1)
+        x_pred = np.array([ambient, flow]).swapaxes(0, 1)
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
         x_pred_new = poly.fit_transform(x_pred)
         pred_cop = self.copmodel.predict(x_pred_new)
-        return float(pred_cop[:, 0])
+        return pred_cop[:, 0]
 
-    def duty(self, ambient: float, flow: float) -> float:
+    def duty(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
         """Predicts duty from regression model
 
         Args:
@@ -82,8 +82,8 @@ class StandardTestRegression(PerformanceModel):
         Returns:
             Predicted COP value
         """
-        x_pred = np.array([ambient, flow]).reshape(1, -1)
+        x_pred = np.array([ambient, flow]).swapaxes(0, 1)
         poly = PolynomialFeatures(degree=2, include_bias=False)
         x_pred_new = poly.fit_transform(x_pred)
         pred_duty = self.dutymodel.predict(x_pred_new)
-        return float(pred_duty[:, 0])
+        return pred_duty[:, 0]

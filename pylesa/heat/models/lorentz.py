@@ -63,7 +63,7 @@ class Lorentz(PerformanceModel):
         return hp_eff
 
     def cop(self, flow_temp: np.ndarray[float], return_temp: np.ndarray[float],
-                 ambient_temp_in: np.ndarray[float], ambient_temp_out: np.ndarray[float]) -> float:
+                 ambient_temp_in: np.ndarray[float], ambient_temp_out: np.ndarray[float]) -> np.ndarray[float]:
         """Array COP calculation
 
         Calculates the cop based upon actual flow/return and ambient
@@ -96,6 +96,8 @@ class Lorentz(PerformanceModel):
         """Duty calculation
 
         Ensures capacity is not exceeded.
+
+        TODO: consider numpy array implementation
 
         Arguments:
             capacity {float} -- electrical capacity of heat pump
