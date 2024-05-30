@@ -47,6 +47,7 @@ def setup_logging(level: enum.Enum):
     # Log to the console
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(CustomFormatter())
+    console_handler.setLevel(logging.WARNING)
     handlers.append(console_handler)
 
     # Set format on handlers and add them to the root

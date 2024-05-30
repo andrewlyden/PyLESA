@@ -9,7 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "pylesa",
-            "args": ["./inputs/WWHC_FOC_WM.xlsx", "runs", "--overwrite"]
+            "args": ["./inputs/chdu_5GW_200houses_0MWwind_southampton.xlsx", "runs", "--overwrite"]
         }
     ]
 }

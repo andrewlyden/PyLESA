@@ -122,10 +122,14 @@ class HotWaterTank(object):
             float -- cp of water at given temp - j/(kg deg C)
         """
         # input temp must be between 0 and 100 deg
-        if isinstance(temp, (int, float)) and temp > 0.:
-            T = round(float(temp), -1)
-            cp = self.cp[T]
-
+        if isinstance(temp, (int, float)):
+            if 100. >= temp >= 0.:
+                T = round(float(temp), -1)
+                cp = self.cp[T]
+            else:
+                msg = f"Water temperature {temp} is outside of allowable range of 0<=temp<=100"
+                LOG.error(msg)
+                raise ValueError(msg)
         else:
             cp = 4180
 
