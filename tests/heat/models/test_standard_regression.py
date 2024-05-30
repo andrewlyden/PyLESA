@@ -29,6 +29,7 @@ def hp(xarr, cosparr, dutyarr):
 class TestStandardTestRegression:
 
     def test_cop(self, hp):
+        assert isinstance(hp, PerformanceModel)
         ambient = [1.0, 5.0]
         flow = [55.0, 60]
         cop = hp.cop(ambient, flow)

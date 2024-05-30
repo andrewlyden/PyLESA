@@ -20,13 +20,13 @@ class PerformanceArray:
 
     def __post_init__(self):
         if self.cop.shape != self.duty.shape:
-            msg = f"cop (shape={self.cop.shape}) and duty (shape={self.duty.array}) must be of same dimensions"
+            msg = f"cop (shape={self.cop.shape}) and duty (shape={self.duty.shape}) must be of same dimensions"
             LOG.error(msg)
-            raise ValueError(msg)
+            raise IndexError(msg)
         if len(self.cop.shape) > 1:
             msg = f"cop and duty arrays must be 1 dimensional"
             LOG.error(msg)
-            raise ValueError(msg)
+            raise IndexError(msg)
 
     def __iter__(self):
         for idx in range(self.cop.shape[0]):
