@@ -23,15 +23,12 @@ def aux_outputs(demand):
 
     i = inputs.aux()
 
-    myAux = Aux(
-        i['fuel'],
-        i['efficiency'],
-        i['fuel_info'])
+    myAux = Aux(i["fuel"], i["efficiency"], i["fuel_info"])
 
     dem = myAux.demand_calc(demand)
     usage = myAux.fuel_usage(demand)
 
-    outputs = {'dem': dem, 'usage': usage}
+    outputs = {"dem": dem, "usage": usage}
 
     return outputs
 
@@ -48,11 +45,11 @@ class Aux(object):
 
         self.fuel = fuel
         self.efficiency = efficiency
-        if fuel == 'Electric':
+        if fuel == "Electric":
             pass
         else:
-            self.cost = fuel_info[fuel]['cost']
-            self.energy_density = fuel_info[fuel]['energy_density']
+            self.cost = fuel_info[fuel]["cost"]
+            self.energy_density = fuel_info[fuel]["energy_density"]
 
     def demand_calc(self, demand):
         """energy demand met by fuel transformer

@@ -10,8 +10,13 @@ LOG = logging.getLogger(__name__)
 
 
 class StandardTestRegression(PerformanceModel):
-    def __init__(self, xarr: np.ndarray, cosparr: np.ndarray,
-                 dutyarr: np.ndarray, degree: int = 2):
+    def __init__(
+        self,
+        xarr: np.ndarray,
+        cosparr: np.ndarray,
+        dutyarr: np.ndarray,
+        degree: int = 2,
+    ):
         """Regression analysis based on standard test condition data
 
         Trains a model on initialisation and predicts cop and duty
@@ -30,15 +35,15 @@ class StandardTestRegression(PerformanceModel):
     @property
     def copmodel(self) -> LinearRegression:
         return self._copmodel
-    
+
     @property
     def dutymodel(self) -> LinearRegression:
         return self._dutymodel
 
-    def _train(self, xarr: np.ndarray, cosparr: np.ndarray,
-                 dutyarr: np.ndarray) -> None:
-        """training model
-        """
+    def _train(
+        self, xarr: np.ndarray, cosparr: np.ndarray, dutyarr: np.ndarray
+    ) -> None:
+        """training model"""
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
 
         if len(xarr.shape) != 2:
@@ -64,7 +69,7 @@ class StandardTestRegression(PerformanceModel):
             msg = f"Temperature, cop and duty arrays must have same first dimension ({xarr.shape[0]})"
             LOG.error(msg)
             raise IndexError(msg)
-        
+
         X_new = poly.fit_transform(xarr)
         Y_COSP_new = poly.fit_transform(cosparr)
         Y_duty_new = poly.fit_transform(dutyarr)
@@ -82,9 +87,11 @@ class StandardTestRegression(PerformanceModel):
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
         return poly.fit_transform(np.array([x, x1]).T)
 
-    def cop(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
+    def cop(
+        self, ambient: np.ndarray[float], flow: np.ndarray[float]
+    ) -> np.ndarray[float]:
         """Predicts COP from regression model
-        
+
         Args:
             ambient: ambient temperatures to predict COP
             flow: flow temperatures to predict COP
@@ -95,7 +102,9 @@ class StandardTestRegression(PerformanceModel):
         pred_cop = self.copmodel.predict(self._fit(ambient, flow))
         return pred_cop[:, 0]
 
-    def duty(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
+    def duty(
+        self, ambient: np.ndarray[float], flow: np.ndarray[float]
+    ) -> np.ndarray[float]:
         """Predicts duty from regression model
 
         Args:

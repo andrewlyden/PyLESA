@@ -6,10 +6,12 @@ import numpy as np
 
 LOG = logging.getLogger(__name__)
 
+
 @dataclass
 class PerformanceValue:
     cop: float
     duty: float
+
 
 @dataclass
 class PerformanceArray:
@@ -28,19 +30,15 @@ class PerformanceArray:
 
     def __iter__(self):
         for idx in range(self.cop.shape[0]):
-            yield PerformanceValue(
-                self.cop[idx],
-                self.duty[idx]
-            )
+            yield PerformanceValue(self.cop[idx], self.duty[idx])
 
     def __getitem__(self, index):
-        return PerformanceValue(
-            self.cop[index],
-            self.duty[index]
-        )
+        return PerformanceValue(self.cop[index], self.duty[index])
+
 
 class PerformanceModel(ABC):
     """Base heat pump performance model"""
+
     @abstractmethod
     def cop(self):
         pass

@@ -3,23 +3,30 @@ import pytest
 
 from pylesa.heat.models import HP, GenericRegression, PerformanceModel
 
+
 @pytest.fixture
 def ashp():
     return GenericRegression(HP.ASHP)
+
 
 @pytest.fixture
 def gshp():
     return GenericRegression(HP.GSHP)
 
+
 @pytest.fixture
 def wshp():
     return GenericRegression(HP.WSHP)
 
+
 def arr(value: float):
     return np.array([value])
 
+
 class TestCop:
-    @pytest.mark.parametrize("hp,estimate", [("ashp", 2.98), ("gshp", 3.94), ("wshp", 3.94)])
+    @pytest.mark.parametrize(
+        "hp,estimate", [("ashp", 2.98), ("gshp", 3.94), ("wshp", 3.94)]
+    )
     def test_hp_cop(self, hp, estimate, request):
         hp = request.getfixturevalue(hp)
         out = hp.cop(arr(50), arr(10))
@@ -54,8 +61,11 @@ class TestCop:
         with pytest.raises(KeyError):
             ashp = GenericRegression("BadType")
 
+
 class TestDuty:
-    @pytest.mark.parametrize("hp,estimate", [("ashp", 7.9), ("gshp", 12.37), ("wshp", 12.37)])
+    @pytest.mark.parametrize(
+        "hp,estimate", [("ashp", 7.9), ("gshp", 12.37), ("wshp", 12.37)]
+    )
     def test_hp_duty(self, hp, estimate, request):
         hp = request.getfixturevalue(hp)
         out = hp.duty(10)
@@ -64,7 +74,7 @@ class TestDuty:
 
     def test_gshp_vs_ashp(self, ashp, gshp):
         assert gshp.duty(10) > ashp.duty(10)
-    
+
     def test_gshp_wshp_equal(self, gshp, wshp):
         ambient = 10
         assert gshp.duty(ambient) == wshp.duty(ambient)

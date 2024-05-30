@@ -2,29 +2,40 @@ import logging
 import numpy as np
 import pandas as pd
 
-from .models import HP, Lorentz, StandardTestRegression, GenericRegression, PerformanceArray, PerformanceModel, PerformanceValue, Simple
+from .models import (
+    HP,
+    Lorentz,
+    StandardTestRegression,
+    GenericRegression,
+    PerformanceArray,
+    PerformanceModel,
+    PerformanceValue,
+    Simple,
+)
 from ..constants import ANNUAL_HOURS
 from ..environment import weather
 
 LOG = logging.getLogger(__name__)
 
+
 class HeatPump(object):
-    def __init__(self,
-            hp_type: HP,
-            modelling_approach: str,
-            capacity: float,
-            ambient_delta_t: float,
-            minimum_runtime: float,
-            minimum_output: float,
-            data_input: str,
-            flow_temp_source: pd.DataFrame,
-            return_temp: pd.DataFrame,
-            hp_ambient_temp: pd.DataFrame,
-            simple_cop: float = None,
-            lorentz_inputs: dict = None,
-            generic_regression_inputs: dict = None,
-            standard_test_regression_inputs: dict = None
-        ):
+    def __init__(
+        self,
+        hp_type: HP,
+        modelling_approach: str,
+        capacity: float,
+        ambient_delta_t: float,
+        minimum_runtime: float,
+        minimum_output: float,
+        data_input: str,
+        flow_temp_source: pd.DataFrame,
+        return_temp: pd.DataFrame,
+        hp_ambient_temp: pd.DataFrame,
+        simple_cop: float = None,
+        lorentz_inputs: dict = None,
+        generic_regression_inputs: dict = None,
+        standard_test_regression_inputs: dict = None,
+    ):
         """heat pump class object
 
         Arguments:
@@ -68,7 +79,7 @@ class HeatPump(object):
     @property
     def model(self) -> PerformanceModel:
         return self._model
-    
+
     @model.setter
     def model(self, approach):
         match approach:
@@ -84,12 +95,13 @@ class HeatPump(object):
                     msg = f"Heat pump performance model ({Lorentz}) cannot be initiated with lorentz_inputs=None"
                     LOG.error(msg)
                     raise ValueError(msg)
-                self._model = Lorentz(self.lorentz_inputs['cop'],
-                    self.lorentz_inputs['flow_temp_spec'],
-                    self.lorentz_inputs['return_temp_spec'],
-                    self.lorentz_inputs['temp_ambient_in_spec'],
-                    self.lorentz_inputs['temp_ambient_out_spec'],
-                    self.lorentz_inputs['elec_capacity']
+                self._model = Lorentz(
+                    self.lorentz_inputs["cop"],
+                    self.lorentz_inputs["flow_temp_spec"],
+                    self.lorentz_inputs["return_temp_spec"],
+                    self.lorentz_inputs["temp_ambient_in_spec"],
+                    self.lorentz_inputs["temp_ambient_out_spec"],
+                    self.lorentz_inputs["elec_capacity"],
                 )
 
             case "Generic regression":
@@ -102,11 +114,11 @@ class HeatPump(object):
                     LOG.error(msg)
                     raise ValueError(msg)
                 self._model = StandardTestRegression(
-                    self.standard_test_regression_inputs['data_x'],
-                    self.standard_test_regression_inputs['data_COSP'],
-                    self.standard_test_regression_inputs['data_duty']
+                    self.standard_test_regression_inputs["data_x"],
+                    self.standard_test_regression_inputs["data_COSP"],
+                    self.standard_test_regression_inputs["data_duty"],
                 )
-            
+
             case _:
                 msg = f"Performance model {approach} is not valid"
                 LOG.error(msg)
@@ -122,26 +134,29 @@ class HeatPump(object):
         """
 
         HP_resource = weather.Weather(
-            air_temperature=self.hp_ambient_temp['air_temperature'],
-            water_temperature=self.hp_ambient_temp['water_temperature']).heatpump()
+            air_temperature=self.hp_ambient_temp["air_temperature"],
+            water_temperature=self.hp_ambient_temp["water_temperature"],
+        ).heatpump()
 
         if self.hp_type == HP.ASHP:
 
             HP_resource = HP_resource.rename(
-                columns={'air_temperature': 'ambient_temp'})
-            return HP_resource[['ambient_temp']]
+                columns={"air_temperature": "ambient_temp"}
+            )
+            return HP_resource[["ambient_temp"]]
 
         elif self.hp_type == HP.WSHP:
 
             HP_resource = HP_resource.rename(
-                columns={'water_temperature': 'ambient_temp'})
-            return HP_resource[['ambient_temp']]
+                columns={"water_temperature": "ambient_temp"}
+            )
+            return HP_resource[["ambient_temp"]]
 
         else:
             msg = f"Invalid heat pump type: {self.hp_type}, must be {HP.ASHP} or {HP.WSHP}"
             LOG.error(msg)
             raise ValueError(msg)
-    
+
     def performance(self) -> PerformanceArray:
         """performance over year of heat pump
 
@@ -156,7 +171,7 @@ class HeatPump(object):
             duty = np.zeros((ANNUAL_HOURS,))
             return PerformanceArray(cop, duty)
 
-        ambient_temp = self.heat_resource()['ambient_temp']
+        ambient_temp = self.heat_resource()["ambient_temp"]
 
         duty_x = self.capacity
 
@@ -164,7 +179,7 @@ class HeatPump(object):
             case Simple():
                 return PerformanceArray(
                     np.empty((ANNUAL_HOURS,)).fill(self.model.cop),
-                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty)
+                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty),
                 )
 
             case Lorentz():
@@ -173,58 +188,52 @@ class HeatPump(object):
                         self.flow_temp_source.values,
                         self.return_temp.values,
                         ambient_temp.values,
-                        ambient_temp.values - self.ambient_delta_t
+                        ambient_temp.values - self.ambient_delta_t,
                     ),
-                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty(self.capacity))
+                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty(self.capacity)),
                 )
 
             case GenericRegression():
                 return PerformanceArray(
-                    self.model.cop(
-                        self.flow_temp_source.values,
-                        ambient_temp.values
-                    ),
-                    np.empty((ANNUAL_HOURS,)).fill(duty_x)
+                    self.model.cop(self.flow_temp_source.values, ambient_temp.values),
+                    np.empty((ANNUAL_HOURS,)).fill(duty_x),
                 )
 
             case StandardTestRegression():
-                cop = self.model.cop(
-                    ambient_temp.values,
-                    self.flow_temp_source.values
-                )
+                cop = self.model.cop(ambient_temp.values, self.flow_temp_source.values)
 
                 # 15% reduction in performance if
                 # data not done to standards
                 # TODO: check this logic against original code
                 factor = np.ones(ambient_temp.shape)
-                if self.data_input == 'Integrated performance':
-                    factor = 1.
-                elif self.data_input == 'Peak performance':
+                if self.data_input == "Integrated performance":
+                    factor = 1.0
+                elif self.data_input == "Peak performance":
                     if self.hp_type == HP.ASHP:
-                        factor[ambient_temp <= 5.] = 0.9
+                        factor[ambient_temp <= 5.0] = 0.9
                     else:
-                        msg = f"Peak performance option not available for {self.hp_type}"
+                        msg = (
+                            f"Peak performance option not available for {self.hp_type}"
+                        )
                         LOG.error(msg)
                         raise ValueError(msg)
                 else:
                     msg = f"{self.data_input} is not valid for {self.model.__class__}"
                     LOG.error(msg)
                     raise ValueError(msg)
-                    
+
                 return PerformanceArray(
-                    cop * factor,
-                    self.model.duty(
-                        ambient_temp,
-                        self.flow_temp_source
-                    )
+                    cop * factor, self.model.duty(ambient_temp, self.flow_temp_source)
                 )
-            
+
             case _:
                 msg = f"Performance of {self.model} cannot be calculated"
                 LOG.error(msg)
                 raise ValueError(msg)
 
-    def elec_usage(self, demand: float, hp_performance: PerformanceValue) -> dict[str, float]:
+    def elec_usage(
+        self, demand: float, hp_performance: PerformanceValue
+    ) -> dict[str, float]:
         """electricity usage of hp for timestep given a thermal demand
 
         calculates the electrical usage of the heat pump given a heat demand
@@ -242,20 +251,20 @@ class HeatPump(object):
         """
 
         if self.capacity == 0:
-            return {'hp_demand': 0.0, 'hp_elec': 0.0}
+            return {"hp_demand": 0.0, "hp_elec": 0.0}
 
         max_elec_usage = demand / hp_performance.cop
         max_elec_cap = hp_performance.duty / hp_performance.cop
         hp_elec = min(max_elec_usage, max_elec_cap)
         hp_demand = hp_elec * hp_performance.cop
 
-        d = {'hp_demand': hp_demand,
-             'hp_elec': hp_elec}
+        d = {"hp_demand": hp_demand, "hp_elec": hp_elec}
 
         return d
 
-    def thermal_output(self, elec_supply: float,
-                       hp_performance: PerformanceValue, heat_demand: float) -> dict[str, float]:
+    def thermal_output(
+        self, elec_supply: float, hp_performance: PerformanceValue, heat_demand: float
+    ) -> dict[str, float]:
         """thermal output from a given electricity supply
 
         Arguments:
@@ -269,7 +278,7 @@ class HeatPump(object):
         """
 
         if self.capacity == 0:
-            return {'hp_demand': 0.0, 'hp_elec': 0.0}
+            return {"hp_demand": 0.0, "hp_elec": 0.0}
 
         # maximum thermal output given elec supply
         max_thermal_output = elec_supply * hp_performance.cop
@@ -278,7 +287,6 @@ class HeatPump(object):
         hp_demand = min(max_thermal_output, heat_demand, hp_performance.duty)
         hp_elec = hp_demand / hp_performance.cop
 
-        d = {'hp_demand': hp_demand,
-             'hp_elec': hp_elec}
+        d = {"hp_demand": hp_demand, "hp_elec": hp_elec}
 
         return d

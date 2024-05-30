@@ -1,4 +1,5 @@
 """Regression test for running pylesa"""
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -7,13 +8,16 @@ from typing import List
 
 from pylesa.main import main
 
+
 @pytest.fixture
 def fixed_order_input():
     return Path("tests/data/fixed_order.xlsx").resolve()
 
+
 @pytest.fixture
 def outdir():
     return Path("tests/data").resolve()
+
 
 @pytest.fixture
 def fixed_order_paths(fixed_order_input: Path, outdir: Path) -> List[Path]:
@@ -21,11 +25,14 @@ def fixed_order_paths(fixed_order_input: Path, outdir: Path) -> List[Path]:
     return [
         outdir / runname / "outputs" / "KPIs" / "KPI_economic_fixed_order.csv",
         outdir / runname / "outputs" / "KPIs" / "KPI_technical_fixed_order.csv",
-        outdir / runname / "outputs" / "KPIs" / "output_fixed_order.csv"
+        outdir / runname / "outputs" / "KPIs" / "output_fixed_order.csv",
     ]
 
+
 class TestPylesa:
-    def test_regression(self, fixed_order_input: Path, outdir: Path, fixed_order_paths: List[Path]):
+    def test_regression(
+        self, fixed_order_input: Path, outdir: Path, fixed_order_paths: List[Path]
+    ):
         # Load existing results, these are committed to the repo
         targets = []
         for csvpath in fixed_order_paths:
@@ -40,7 +47,3 @@ class TestPylesa:
             got = pd.read_csv(outpath)
             assert expected.columns.all() == got.columns.all()
             assert np.allclose(expected.values, got.values)
-
-
-
-
