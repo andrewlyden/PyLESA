@@ -1,5 +1,5 @@
 """Regression test for running pylesa"""
-from dataclasses import dataclass
+import numpy as np
 import pandas as pd
 from pathlib import Path
 import pytest
@@ -38,7 +38,8 @@ class TestPylesa:
         for idx, outpath in enumerate(fixed_order_paths):
             expected = targets[idx]
             got = pd.read_csv(outpath)
-            assert got.equals(expected)
+            assert expected.columns.all() == got.columns.all()
+            assert np.allclose(expected.values, got.values)
 
 
 

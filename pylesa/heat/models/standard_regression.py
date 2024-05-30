@@ -10,25 +10,22 @@ LOG = logging.getLogger(__name__)
 
 
 class StandardTestRegression(PerformanceModel):
-    def __init__(self, xarr: pd.Series | np.ndarray, cosparr: pd.Series | np.ndarray,
-                 dutyarr: pd.Series | np.ndarray, degree: int = 2):
+    def __init__(self, xarr: np.ndarray, cosparr: np.ndarray,
+                 dutyarr: np.ndarray, degree: int = 2):
         """Regression analysis based on standard test condition data
 
         Trains a model on initialisation and predicts cop and duty
 
         Args:
-            xarr: Array of flow / ambient temperatures
-            cosparr: Array of COSP data
-            dutyarr: Array of duty data
+            xarr: 2D array of flow and ambient temperatures
+            cosparr: 2D array of COSP data of shape (N, 1)
+            dutyarr: 2D array of duty data of shape (N, 1)
             degree: sklearn.preprocessing.PolynomialFeatures polynomial number (default=2)
         """
-        self._xarr = xarr
-        self._cosparr = cosparr
-        self._dutyarr = dutyarr
         self._degree = degree
         self._copmodel = None
         self._dutymodel = None
-        self.train()
+        self._train(xarr, cosparr, dutyarr)
 
     @property
     def copmodel(self) -> LinearRegression:
@@ -38,14 +35,39 @@ class StandardTestRegression(PerformanceModel):
     def dutymodel(self) -> LinearRegression:
         return self._dutymodel
 
-    def train(self) -> None:
+    def _train(self, xarr: np.ndarray, cosparr: np.ndarray,
+                 dutyarr: np.ndarray) -> None:
         """training model
         """
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
 
-        X_new = poly.fit_transform(self._xarr)
-        Y_COSP_new = poly.fit_transform(self._cosparr)
-        Y_duty_new = poly.fit_transform(self._dutyarr)
+        if len(xarr.shape) != 2:
+            msg = f"Model training temperature data must have flow and ambient columns, data has {len(xarr.shape)} dimensions"
+            LOG.error(msg)
+            raise IndexError(msg)
+        if xarr.shape[1] != 2:
+            msg = f"Model training temperature data must have flow and ambient columns, data has {xarr.shape[1]} columns"
+            LOG.error(msg)
+            raise IndexError(msg)
+
+        if isinstance(cosparr, pd.DataFrame) or isinstance(cosparr, pd.Series):
+            cosparr = cosparr.values
+        if len(cosparr.shape) == 1:
+            cosparr = cosparr.reshape(-1, 1)
+
+        if isinstance(dutyarr, pd.DataFrame) or isinstance(dutyarr, pd.Series):
+            dutyarr = dutyarr.values
+        if len(dutyarr.shape) == 1:
+            dutyarr = dutyarr.reshape(-1, 1)
+
+        if xarr.shape[0] != cosparr.shape[0] or xarr.shape[0] != dutyarr.shape[0]:
+            msg = f"Temperature, cop and duty arrays must have same first dimension ({xarr.shape[0]})"
+            LOG.error(msg)
+            raise IndexError(msg)
+        
+        X_new = poly.fit_transform(xarr)
+        Y_COSP_new = poly.fit_transform(cosparr)
+        Y_duty_new = poly.fit_transform(dutyarr)
 
         model_cop = LinearRegression()
         model_cop.fit(X_new, Y_COSP_new)
@@ -56,34 +78,32 @@ class StandardTestRegression(PerformanceModel):
         self._copmodel = model_cop
         self._dutymodel = model_duty
 
+    def _fit(self, x, x1) -> np.ndarray[float]:
+        poly = PolynomialFeatures(degree=self._degree, include_bias=False)
+        return poly.fit_transform(np.array([x, x1]).T)
+
     def cop(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
         """Predicts COP from regression model
         
         Args:
-            ambient: ambient temperature to predict COP
-            flow: flow temperature to predict COP
+            ambient: ambient temperatures to predict COP
+            flow: flow temperatures to predict COP
 
         Returns:
             Predicted COP value
         """
-        x_pred = np.array([ambient, flow]).swapaxes(0, 1)
-        poly = PolynomialFeatures(degree=self._degree, include_bias=False)
-        x_pred_new = poly.fit_transform(x_pred)
-        pred_cop = self.copmodel.predict(x_pred_new)
+        pred_cop = self.copmodel.predict(self._fit(ambient, flow))
         return pred_cop[:, 0]
 
     def duty(self, ambient: np.ndarray[float], flow: np.ndarray[float]) -> np.ndarray[float]:
         """Predicts duty from regression model
 
         Args:
-            ambient: ambient temperature to predict COP
-            flow: flow temperature to predict COP
+            ambient: ambient temperatures to predict COP
+            flow: flow temperatures to predict COP
 
         Returns:
             Predicted duty value
         """
-        x_pred = np.array([ambient, flow]).swapaxes(0, 1)
-        poly = PolynomialFeatures(degree=2, include_bias=False)
-        x_pred_new = poly.fit_transform(x_pred)
-        pred_duty = self.dutymodel.predict(x_pred_new)
+        pred_duty = self.dutymodel.predict(self._fit(ambient, flow))
         return pred_duty[:, 0]

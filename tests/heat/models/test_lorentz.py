@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from pylesa.heat.models import Lorentz, PerformanceModel
 
