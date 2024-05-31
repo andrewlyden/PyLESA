@@ -2,13 +2,14 @@ import logging
 from pathlib import Path
 import shutil
 import time
+from tqdm import tqdm
 
 from . import parametric_analysis
 from .controllers import fixed_order
 from .controllers import mpc
 from .io import inputs, outputs, read_excel
 from .io.paths import valid_dir, valid_fpath
-from .threads import run_pool
+from .process import OutputProcess
 
 LOG = logging.getLogger(__name__)
 
@@ -86,24 +87,31 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False):
     timesteps = controller_info['total_timesteps']
     first_hour = controller_info['first_hour']
 
-    # Run controller for all combinations
-    jobs = {}
-    for i in range(num_combos):
-        # combo to be run
-        subname = combinations[i]
-        jobs[subname] = [controller, subname, outdir, first_hour, timesteps]
-        # run_solver(controller, subname, outdir, first_hour, timesteps)
-    run_pool(run_solver, jobs, "Running solver")
+    # Create separate process for writing output
+    p = OutputProcess()
 
-    # Run outputs for all combinations
-    jobs = {}
-    for i in range(num_combos):
-        # combo to be run
-        subname = combinations[i]
-        jobs[subname] = [outdir, subname]
-        # outputs.run_plots(outdir, subname)
-    LOG.info('Running output analysis...')
-    run_pool(outputs.run_plots, jobs, "Writing output")
+    try:
+        # Start output process
+        # Process waits to write output until a job is submitted
+        p.start(outputs.run_plots)
+
+        # Run controller for all combinations
+        jobs = {}
+        for i in tqdm(range(num_combos), desc="Jobs"):
+            # combo to be run
+            subname = combinations[i]
+            jobs[subname] = [controller, subname, outdir, first_hour, timesteps]
+            run_solver(controller, subname, outdir, first_hour, timesteps)
+            # Submit job to output queue for writing
+            p.submit([outdir, subname])
+
+    except Exception as e:
+        p.cancel()
+        raise e
+
+    finally:
+        # Stop output process once job is complete
+        p.stop()
 
     tx = time.time()
     outputs.run_KPIs(outdir)
