@@ -103,7 +103,8 @@ class FixedOrder(object):
         # run controller for each timestep
         for timestep in tqdm(
                 range(first_hour, final_hour),
-                desc=f"Solving: {self.subname}"
+                desc=f"Solving: {self.subname}",
+                leave=False
             ):
             heat_demand = self.heat_demand[timestep]
             source_temp = self.source_temp[timestep]

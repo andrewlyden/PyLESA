@@ -6,8 +6,8 @@ import logging
 from gekko import GEKKO
 from pathlib import Path
 import numpy as np
-from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 import pickle
+from tqdm import tqdm
 
 from .. import initialise_classes, tools
 from ..io import inputs
@@ -548,13 +548,6 @@ class Scheduler(object):
         horizon = self.horizon
         final_hour = first_hour + timesteps
 
-        # includes a progress bar, purely for aesthetics
-        widgets = ['Running: ' + self.subname, ' ', Percentage(), ' ',
-                   Bar(marker=RotatingMarker(), left='[', right=']'),
-                   ' ', ETA()]
-        pbar = ProgressBar(widgets=widgets, maxval=timesteps)
-        pbar.start()
-
         if final_hour > 8760:
             msg = f'The final timestep is {final_hour} which is beyond the end of the year (8760)'
             LOG.error(msg)
@@ -562,7 +555,11 @@ class Scheduler(object):
 
         results = []
         next_results = []
-        for hour in range(first_hour, final_hour - 1):
+        for hour in tqdm(
+                range(first_hour, final_hour - 1),
+                desc=f"Solving: {self.subname}",
+                leave=False
+            ):
             final_horizon_hour = hour + horizon
             if final_horizon_hour > 8759:
                 final_horizon_hour = 8759
@@ -668,11 +665,6 @@ class Scheduler(object):
                         prev_result)
                     results.append(r['results'])
                     next_results.append(r['next_results'])
-
-            # update for progress bar
-            pbar.update(hour - first_hour + 1)
-        # stop progress bar
-        pbar.finish()
 
         # write the outputs to a pickle
         file = self.root / OUTDIR / self.subname / 'outputs.pkl'
