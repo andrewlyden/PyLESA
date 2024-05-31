@@ -7,6 +7,7 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from typing import Dict
 
 from . import inputs
@@ -60,43 +61,51 @@ def run_plots(root: str | Path, subname: str):
     controller_info = myInputs.controller()['controller_info']
     timesteps = controller_info['total_timesteps']
 
+    jobs = []
+
     if timesteps == 8760:
         for period in ['Year', 'Winter', 'Summer']:
             myPlots = Plot(root, subname, period)
-            myPlots.operation()
-            myPlots.elec_demand_and_RES()
-            myPlots.HP_and_heat_demand()
-            myPlots.TS()
-            myPlots.ES()
-            myPlots.grid()
+            jobs.append(myPlots.operation)
+            jobs.append(myPlots.elec_demand_and_RES)
+            jobs.append(myPlots.HP_and_heat_demand)
+            jobs.append(myPlots.TS)
+            jobs.append(myPlots.ES)
+            jobs.append(myPlots.grid)
             if period == 'Year':
-                myPlots.RES_bar()
+                jobs.append(myPlots.RES_bar)
     else:
         period = 'User'
         myPlots = Plot(root, subname, period)
-        myPlots.operation()
-        myPlots.elec_demand_and_RES()
-        myPlots.HP_and_heat_demand()
-        myPlots.TS()
-        myPlots.ES()
-        myPlots.grid()
-        myPlots.RES_bar()
+        jobs.append(myPlots.operation)
+        jobs.append(myPlots.elec_demand_and_RES)
+        jobs.append(myPlots.HP_and_heat_demand)
+        jobs.append(myPlots.TS)
+        jobs.append(myPlots.ES)
+        jobs.append(myPlots.grid)
+        jobs.append(myPlots.RES_bar)
 
+    for job in tqdm(jobs, desc=f"Plotting: {subname}"):
+        job()
 
 def run_KPIs(root: str | Path):
     root = Path(root).resolve()
 
-    my3DPlots = ThreeDPlots(root)
-    my3DPlots.KPIs_to_csv()
-    my3DPlots.plot_opex()
-    my3DPlots.plot_RES()
-    my3DPlots.plot_heat_from_RES()
-    my3DPlots.plot_HP_size_ratio()
-    my3DPlots.plot_HP_utilisation()
-    my3DPlots.plot_capital_cost()
-    my3DPlots.plot_LCOH()
-    my3DPlots.plot_COH()
+    jobs = []
 
+    my3DPlots = ThreeDPlots(root)
+    jobs.append(my3DPlots.KPIs_to_csv)
+    jobs.append(my3DPlots.plot_opex)
+    jobs.append(my3DPlots.plot_RES)
+    jobs.append(my3DPlots.plot_heat_from_RES)
+    jobs.append(my3DPlots.plot_HP_size_ratio)
+    jobs.append(my3DPlots.plot_HP_utilisation)
+    jobs.append(my3DPlots.plot_capital_cost)
+    jobs.append(my3DPlots.plot_LCOH)
+    jobs.append(my3DPlots.plot_COH)
+
+    for job in tqdm(jobs, desc=f"KPIs"):
+        job()
 
 class Plot(object):
 

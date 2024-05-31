@@ -8,8 +8,32 @@ from .controllers import fixed_order
 from .controllers import mpc
 from .io import inputs, outputs, read_excel
 from .io.paths import valid_dir, valid_fpath
+from .threads import run_pool
 
 LOG = logging.getLogger(__name__)
+
+def run_solver(controller: str, subname:  str, outdir: Path, first_hour: int, timesteps: int):
+    if controller == 'Fixed order control':
+        # run fixed order controller
+        LOG.info(f'Running fixed order controller: {subname}')
+        fixed_order.FixedOrder(
+            outdir, subname).run_timesteps(
+                first_hour, timesteps)
+
+    elif controller == 'Model predictive control':
+        # run mpc controller
+        LOG.info('Running model predictive controller...')
+        myScheduler = mpc.Scheduler(
+            outdir, subname)
+        pre_calc = myScheduler.pre_calculation(
+            first_hour, timesteps)
+        myScheduler.moving_horizon(
+            pre_calc, first_hour, timesteps)
+
+    else:
+        msg = f'Unsuitable controller chosen: {controller}'
+        LOG.error(msg)
+        raise ValueError(msg)
 
 def main(xlsxpath: str, outdir: str, overwrite: bool = False):
     """Run PyLESA, an open source tool capable of modelling local energy systems.
@@ -62,37 +86,24 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False):
     timesteps = controller_info['total_timesteps']
     first_hour = controller_info['first_hour']
 
-    # run controller and outputs for all combinations
+    # Run controller for all combinations
+    jobs = {}
     for i in range(num_combos):
-
         # combo to be run
         subname = combinations[i]
+        jobs[subname] = [controller, subname, outdir, first_hour, timesteps]
+        # run_solver(controller, subname, outdir, first_hour, timesteps)
+    run_pool(run_solver, jobs, "Running solver")
 
-        if controller == 'Fixed order control':
-            # run fixed order controller
-            LOG.info(f'Running fixed order controller: {subname}')
-            fixed_order.FixedOrder(
-                outdir, subname).run_timesteps(
-                    first_hour, timesteps)
-
-        elif controller == 'Model predictive control':
-            # run mpc controller
-            LOG.info('Running model predictive controller...')
-            myScheduler = mpc.Scheduler(
-                outdir, subname)
-            pre_calc = myScheduler.pre_calculation(
-                first_hour, timesteps)
-            myScheduler.moving_horizon(
-                pre_calc, first_hour, timesteps)
-
-        else:
-            msg = f'Unsuitable controller chosen: {controller}'
-            LOG.error(msg)
-            raise ValueError(msg)
-
-        LOG.info('Running output analysis...')
-        # run output analysis
-        outputs.run_plots(outdir, subname)
+    # Run outputs for all combinations
+    jobs = {}
+    for i in range(num_combos):
+        # combo to be run
+        subname = combinations[i]
+        jobs[subname] = [outdir, subname]
+        # outputs.run_plots(outdir, subname)
+    LOG.info('Running output analysis...')
+    run_pool(outputs.run_plots, jobs, "Writing output")
 
     tx = time.time()
     outputs.run_KPIs(outdir)

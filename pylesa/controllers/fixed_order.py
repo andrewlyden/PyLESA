@@ -12,8 +12,7 @@ import pandas as pd
 from pathlib import Path
 import numpy as np
 import pickle
-
-from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
+from tqdm import tqdm
 
 from .. import initialise_classes
 from ..io import inputs
@@ -93,13 +92,6 @@ class FixedOrder(object):
         soc_list = []
         results = []
 
-        # includes a progress bar, purely for aesthetics
-        widgets = ['Running: ' + self.subname, ' ', Percentage(), ' ',
-                   Bar(marker=RotatingMarker(), left='[', right=']'),
-                   ' ', ETA()]
-        pbar = ProgressBar(widgets=widgets, maxval=timesteps)
-        pbar.start()
-
         # can run number of timesteps up to 8760
         # final hour is from first hour plus number of timesteps
         final_hour = first_hour + timesteps
@@ -109,7 +101,10 @@ class FixedOrder(object):
             raise ValueError(msg)
 
         # run controller for each timestep
-        for timestep in range(first_hour, final_hour):
+        for timestep in tqdm(
+                range(first_hour, final_hour),
+                desc=f"Solving: {self.subname}"
+            ):
             heat_demand = self.heat_demand[timestep]
             source_temp = self.source_temp[timestep]
             flow_temp = self.flow_temp[timestep]
@@ -160,11 +155,6 @@ class FixedOrder(object):
                 run['TS']['final_nodes_temp'])
             soc_list.append(
                 run['ES']['final_soc'])
-
-            # update for progress bar
-            pbar.update(timestep - first_hour + 1)
-        # stop progress bar
-        pbar.finish()
 
         # write the outputs to a pickle
         file = self.root / OUTDIR / self.subname / 'outputs.pkl'
