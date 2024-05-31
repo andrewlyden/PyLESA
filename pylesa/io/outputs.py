@@ -7,7 +7,6 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 from typing import Dict
 
 from . import inputs
@@ -85,7 +84,7 @@ def run_plots(root: str | Path, subname: str):
         jobs.append(myPlots.grid)
         jobs.append(myPlots.RES_bar)
 
-    for job in tqdm(jobs, desc=f"Plotting: {subname}"):
+    for job in jobs:
         job()
 
 def run_KPIs(root: str | Path):
@@ -104,7 +103,7 @@ def run_KPIs(root: str | Path):
     jobs.append(my3DPlots.plot_LCOH)
     jobs.append(my3DPlots.plot_COH)
 
-    for job in tqdm(jobs, desc=f"KPIs"):
+    for job in jobs:
         job()
 
 class Plot(object):
