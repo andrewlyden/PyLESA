@@ -36,13 +36,21 @@ def run_solver(controller: str, subname:  str, outdir: Path, first_hour: int, ti
         LOG.error(msg)
         raise ValueError(msg)
 
-def main(xlsxpath: str, outdir: str, overwrite: bool = False):
+def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool = False):
     """Run PyLESA, an open source tool capable of modelling local energy systems.
     
+    By default, this function runs the PyLESA solver in the main process but
+    outsources the writing of matplotlib files to a second process. The writing
+    of matplotlib files takes roughly the same amount of time as the Fixed Order
+    solver takes, so there is a significant performance benefit to running
+    multiple cores. Multithreading is not an option since the artist functions
+    in matplotlib are not necessarily thread safe.
+
     Args:
         xlsxpath: path to Excel input file\n
         outdir: path to output directory, a sub-directory matching the Excel filename will be created\n
         overwrite: bool flag to overwrite existing output, default: False
+        singlecore: bool flag to run on a single core rather than two cores, default: False (uses two cores)
     """
     xlsxpath = valid_fpath(xlsxpath)
     outdir = valid_dir(outdir) / xlsxpath.stem
@@ -87,31 +95,40 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False):
     timesteps = controller_info['total_timesteps']
     first_hour = controller_info['first_hour']
 
-    # Create separate process for writing output
-    p = OutputProcess()
-
-    try:
-        # Start output process
-        # Process waits to write output until a job is submitted
-        p.start(outputs.run_plots)
-
-        # Run controller for all combinations
-        jobs = {}
+    if singlecore:
+        # Single core
         for i in tqdm(range(num_combos), desc="Jobs"):
             # combo to be run
             subname = combinations[i]
-            jobs[subname] = [controller, subname, outdir, first_hour, timesteps]
             run_solver(controller, subname, outdir, first_hour, timesteps)
-            # Submit job to output queue for writing
-            p.submit([outdir, subname])
+            # Run output
+            outputs.run_plots(outdir, subname)
+    else:
+        # Run two processes:
+        # - main process runs the solver
+        # - second process runs the output (to produce matplotlib figures)
+        p = OutputProcess()
 
-    except Exception as e:
-        p.cancel()
-        raise e
+        try:
+            # Start output process
+            # Process waits to write output until a job is submitted
+            p.start(outputs.run_plots)
 
-    finally:
-        # Stop output process once job is complete
-        p.stop()
+            # Run controller for all combinations
+            for i in tqdm(range(num_combos), desc="Jobs"):
+                # combo to be run
+                subname = combinations[i]
+                run_solver(controller, subname, outdir, first_hour, timesteps)
+                # Submit job to output queue for writing
+                p.submit([outdir, subname])
+
+        except Exception as e:
+            p.cancel()
+            raise e
+
+        finally:
+            # Stop output process once job is complete
+            p.stop()
 
     tx = time.time()
     outputs.run_KPIs(outdir)
