@@ -106,9 +106,9 @@ def init(root: Path, subname: str) -> Dict[str, object]:
         inputs_demands['source_temp'],
         inputs_demands['return_temp_DH'],
         input_weather,
-        inputs_simple=inputs_simple,
-        inputs_lorentz=inputs_lorentz,
-        inputs_standard=inputs_standard
+        simple_cop=inputs_simple,
+        lorentz_inputs=inputs_lorentz,
+        standard_inputs=inputs_standard
     )
 
     i = myInputs.electrical_storage()
