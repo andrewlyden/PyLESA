@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..constants import INDIR
+from ..heat.models import HP, ModelName
 
 LOG = logging.getLogger(__name__)
 
@@ -178,9 +179,20 @@ class Inputs(object):
         hp = self.container['hp_basics']
 
         # the inputs which specify the heat pump to be modelled
-        hp_type = hp['heat_pump_type'][0]
+        if hp['heat_pump_type'][0] not in HP:
+            msg = f"Heat pump type {hp['heat_pump_type'][0]} is not one of {[_.value for _ in HP]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        hp_type = HP[hp['heat_pump_type'][0]]
+
         capacity = hp['capacity'][0]
-        modelling_approach = hp['modelling_approach'][0]
+
+        if hp['modelling_approach'][0] not in ModelName:
+            msg = f"Heat pump modelling approach {hp['modelling_approach'][0]} is not one of {[_.value for _ in ModelName]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        modelling_approach = ModelName[hp['modelling_approach'][0]]
+
         ambient_delta_t = hp['ambient_delta_t'][0]
         minimum_runtime = hp['minimum_runtime'][0]
         data_input = hp['data_input'][0]

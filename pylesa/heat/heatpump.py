@@ -4,6 +4,7 @@ import pandas as pd
 
 from .models import (
     HP,
+    ModelName,
     Lorentz,
     StandardTestRegression,
     GenericRegression,
@@ -22,7 +23,7 @@ class HeatPump(object):
     def __init__(
         self,
         hp_type: HP,
-        modelling_approach: str,
+        modelling_approach: ModelName,
         capacity: float,
         ambient_delta_t: float,
         minimum_runtime: float,
@@ -33,32 +34,28 @@ class HeatPump(object):
         hp_ambient_temp: pd.DataFrame,
         simple_cop: float = None,
         lorentz_inputs: dict = None,
-        generic_regression_inputs: dict = None,
-        standard_test_regression_inputs: dict = None,
+        standard_inputs: dict = None,
     ):
         """heat pump class object
 
-        Arguments:
-            hp_type {string} -- type of heatpump, ASHP, WSHP, GSHP
-            modelling_approach {str} -- simple, lorentz,
-                                        generic, standard regression
-            capacity {float} -- thermal capacity of heat pump
-            ambient_delta_t {float} -- drop in ambient source temperature
-                                     from inlet to outlet
-            minimum_runtime {float} -- fixed or variable speed compressor
-            data_input {str} -- type of data input, peak or integrated
-            flow_temp {dataframe} -- required temperatures out of HP
-            return_temp {dataframe} -- inlet temp to HP
-            weather {dic} -- ambient conditions of heat source
+        Args:
+            hp_type, type of heatpump, ASHP, WSHP, GSHP
+            modelling_approach, selects performance model
+            capacity, thermal capacity of heat pump
+            ambient_delta_t, drop in ambient source temperature
+                from inlet to outlet
+            minimum_runtime, fixed or variable speed compressor
+            data_input, type of data input, peak or integrated
+            flow_temp, required temperatures out of HP
+            return_temp, inlet temp to HP
+            hp_ambient_temp, ambient conditions of heat source
 
-        Keyword Arguments: all these are for inputs, bar simple,
-                           for different modelling approaches
-            simple_cop {float} -- only COP for simple (default: {None})
-            lorentz_inputs {dic} -- (default: {None})
-            generic_regression_inputs {dic} -- (default: {None})
-            standard_test_regression_inputs {dic} -- (default: {None})
+        Kwargs: all these are for inputs, bar simple, for different modelling approaches
+            simple_cop, only COP for simple, default: None
+            lorentz_inputs, default: None
+            standard_inputs, default: None
         """
-        self.hp_type = HP[hp_type]
+        self.hp_type = hp_type
         self.capacity = capacity
         self.ambient_delta_t = ambient_delta_t
         self.minimum_runtime = minimum_runtime
@@ -70,8 +67,7 @@ class HeatPump(object):
 
         self.simple_cop = simple_cop
         self.lorentz_inputs = lorentz_inputs
-        self.generic_regression_inputs = generic_regression_inputs
-        self.standard_test_regression_inputs = standard_test_regression_inputs
+        self.standard_inputs = standard_inputs
 
         self._model = None
         self.model = modelling_approach
@@ -81,16 +77,16 @@ class HeatPump(object):
         return self._model
 
     @model.setter
-    def model(self, approach):
+    def model(self, approach: ModelName):
         match approach:
-            case "Simple":
+            case ModelName.SIMPLE:
                 if self.simple_cop is None:
                     msg = f"Heat pump performance model ({Simple}) cannot be initiated with simple_cop=None"
                     LOG.error(msg)
                     raise ValueError(msg)
                 self._model = Simple(self.simple_cop, self.capacity)
 
-            case "Lorentz":
+            case ModelName.LORENTZ:
                 if self.lorentz_inputs is None:
                     msg = f"Heat pump performance model ({Lorentz}) cannot be initiated with lorentz_inputs=None"
                     LOG.error(msg)
@@ -104,19 +100,19 @@ class HeatPump(object):
                     self.lorentz_inputs["elec_capacity"],
                 )
 
-            case "Generic regression":
+            case ModelName.GENERIC:
                 # Raises error if hp_type is invalid
                 self._model = GenericRegression(self.hp_type)
 
-            case "Standard test regression":
-                if self.standard_test_regression_inputs is None:
-                    msg = f"Heat pump performance model ({StandardTestRegression}) cannot be initiated with standard_test_regression_inputs=None"
+            case ModelName.STANDARD:
+                if self.standard_inputs is None:
+                    msg = f"Heat pump performance model ({StandardTestRegression}) cannot be initiated with standard_inputs=None"
                     LOG.error(msg)
                     raise ValueError(msg)
                 self._model = StandardTestRegression(
-                    self.standard_test_regression_inputs["data_x"],
-                    self.standard_test_regression_inputs["data_COSP"],
-                    self.standard_test_regression_inputs["data_duty"],
+                    self.standard_inputs["data_x"],
+                    self.standard_inputs["data_COSP"],
+                    self.standard_inputs["data_duty"],
                 )
 
             case _:

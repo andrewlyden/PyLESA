@@ -6,8 +6,8 @@ See Staffel paper on review of domestic heat pumps for coefficients.
 import logging
 import numpy as np
 
+from .enums import HP
 from .performance import PerformanceModel
-from .constants import HP
 
 LOG = logging.getLogger(__name__)
 
