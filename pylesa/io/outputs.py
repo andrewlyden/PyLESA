@@ -7,6 +7,7 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from typing import Dict
 
 from . import inputs
@@ -103,8 +104,9 @@ def run_KPIs(root: str | Path):
     jobs.append(my3DPlots.plot_LCOH)
     jobs.append(my3DPlots.plot_COH)
 
-    for job in jobs:
+    for job in tqdm(jobs, desc=f"Writing KPIs"):
         job()
+
 
 class Plot(object):
 
