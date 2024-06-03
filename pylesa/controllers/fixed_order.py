@@ -1062,10 +1062,10 @@ class FixedOrder(object):
         hpr = self.myHeatPump.thermal_output(
             RES_left, hp_performance, heat_unmet)
         # thermal output from heat pump running on renewables
-        HPtrd = min(hpr['hp_demand'], heat_pump_spare)
+        HPtrd = min(hpr.demand, heat_pump_spare)
         # elec usage
         HPetd = self.myHeatPump.elec_usage(
-            HPtrd, hp_performance)['hp_elec']
+            HPtrd, hp_performance)
 
         return {'h': HPtrd, 'e': HPetd}
 
@@ -1105,7 +1105,7 @@ class FixedOrder(object):
 
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            heat_pump_import_demand, hp_performance)['hp_elec']
+            heat_pump_import_demand, hp_performance)
 
         return {'h': heat_pump_import_demand, 'e': elec}
 
@@ -1141,10 +1141,10 @@ class FixedOrder(object):
             hp_usage)
 
         # thermal output from heat pump running on renewables
-        HP_h_es = min(max_hp_ES['hp_demand'], heat_pump_spare)
+        HP_h_es = min(max_hp_ES.demand, heat_pump_spare)
         # elec usage
         HP_e_es = self.myHeatPump.elec_usage(
-            HP_h_es, hp_performance)['hp_elec']
+            HP_h_es, hp_performance)
 
         return {'h': HP_h_es, 'e': HP_e_es}
 
@@ -1177,7 +1177,7 @@ class FixedOrder(object):
         HPtrs = min(hp_left, tank_charge_left)
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            HPtrs, hp_performance)['hp_elec']
+            HPtrs, hp_performance)
 
         return {'h': HPtrs, 'e': elec}
 
@@ -1225,7 +1225,7 @@ class FixedOrder(object):
             ts_hp_charge_heat_imports = 0
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            ts_hp_charge_heat_imports, hp_performance)['hp_elec']
+            ts_hp_charge_heat_imports, hp_performance)
 
         return {'h': ts_hp_charge_heat_imports, 'e': elec}
 

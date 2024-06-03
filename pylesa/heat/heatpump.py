@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import numpy as np
 import pandas as pd
@@ -17,6 +18,12 @@ from ..constants import ANNUAL_HOURS
 from ..environment import weather
 
 LOG = logging.getLogger(__name__)
+
+
+@dataclass
+class HpDemand:
+    demand: float
+    elec: float
 
 
 class HeatPump(object):
@@ -78,6 +85,7 @@ class HeatPump(object):
 
     @model.setter
     def model(self, approach: ModelName):
+        """Generate PerformanceModel from modelling approach"""
         match approach:
             case ModelName.SIMPLE:
                 if self.simple_cop is None:
@@ -227,9 +235,7 @@ class HeatPump(object):
                 LOG.error(msg)
                 raise ValueError(msg)
 
-    def elec_usage(
-        self, demand: float, hp_performance: PerformanceValue
-    ) -> dict[str, float]:
+    def elec_usage(self, demand: float, hp_performance: PerformanceValue) -> float:
         """electricity usage of hp for timestep given a thermal demand
 
         calculates the electrical usage of the heat pump given a heat demand
@@ -237,44 +243,35 @@ class HeatPump(object):
         heat pump elec demand, cop, duty, and leftover
         (only non-zero for fixed speed HP)
 
-        Arguments:
+        Args:
             demand, thermal demand to be met by heat pump
             hp_performance, PerformanceValue at specific timestep
 
         Returns:
-            dic -- heat demand to be met, cop, duty,
-                   heat demand met by hp, electricity usage of heat pump
+            Electricity usage
         """
-
         if self.capacity == 0:
-            return {"hp_demand": 0.0, "hp_elec": 0.0}
-
+            return 0.0
         max_elec_usage = demand / hp_performance.cop
         max_elec_cap = hp_performance.duty / hp_performance.cop
-        hp_elec = min(max_elec_usage, max_elec_cap)
-        hp_demand = hp_elec * hp_performance.cop
-
-        d = {"hp_demand": hp_demand, "hp_elec": hp_elec}
-
-        return d
+        return min(max_elec_usage, max_elec_cap)
 
     def thermal_output(
         self, elec_supply: float, hp_performance: PerformanceValue, heat_demand: float
-    ) -> dict[str, float]:
+    ) -> HpDemand:
         """thermal output from a given electricity supply
 
-        Arguments:
+        Args:
             elec_supply, electricity supply used by heat pump
             hp_performance, PerformanceValue at specific timestep
             heat_demand, heat demand to be met of timestep
 
         Returns:
-            dic -- max_thermal_output, heat demand met by hp,
-                   electricity usage of heat pump
+            HpDemand object defining heat demand met by hp and electricity usage
         """
 
         if self.capacity == 0:
-            return {"hp_demand": 0.0, "hp_elec": 0.0}
+            return HpDemand(0.0, 0.0)
 
         # maximum thermal output given elec supply
         max_thermal_output = elec_supply * hp_performance.cop
@@ -283,6 +280,4 @@ class HeatPump(object):
         hp_demand = min(max_thermal_output, heat_demand, hp_performance.duty)
         hp_elec = hp_demand / hp_performance.cop
 
-        d = {"hp_demand": hp_demand, "hp_elec": hp_elec}
-
-        return d
+        return HpDemand(hp_demand, hp_elec)

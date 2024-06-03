@@ -4,75 +4,34 @@ contains class for auxiliaries which covers
 back up heaters
 """
 
-from ..io import inputs
-
-
-def aux_outputs(demand):
-    """aux outputs
-
-    takes inputs from excel sheet
-    creates aux class object
-    calculates demand, fuel usage in kwh, fuel mass in kg, and cost
-
-    Arguments:
-        demand {float} -- given demand to be met by aux
-
-    Returns:
-        dict -- demand, fuel usage and cost
-    """
-
-    i = inputs.aux()
-
-    myAux = Aux(i["fuel"], i["efficiency"], i["fuel_info"])
-
-    dem = myAux.demand_calc(demand)
-    usage = myAux.fuel_usage(demand)
-
-    outputs = {"dem": dem, "usage": usage}
-
-    return outputs
+from typing import Any, Dict
 
 
 class Aux(object):
 
-    def __init__(self, fuel, efficiency, fuel_info):
-        """class instance
+    def __init__(
+        self, fuel: str, efficiency: float, fuel_info: Dict[str, Dict[str, Any]]
+    ):
+        """Back-up heater
 
-        Arguments:
-            fuel {str} -- name of fuel used
-            efficiency {float} -- efficiency of fuel transform
+        Args:
+            fuel, name of fuel used
+            efficiency, efficiency of fuel transform
+            fuel_info, nested dictionary defining fuel cost and energy density
         """
-
         self.fuel = fuel
         self.efficiency = efficiency
-        if fuel == "Electric":
-            pass
-        else:
+        if fuel.lower() != "electric":
             self.cost = fuel_info[fuel]["cost"]
             self.energy_density = fuel_info[fuel]["energy_density"]
 
-    def demand_calc(self, demand):
-        """energy demand met by fuel transformer
+    def fuel_usage(self, demand: float) -> float:
+        """Fuel used (units consistent with demand)
 
-        Arguments:
-            demand {float} -- unmet demand
-
-        Returns:
-            float -- demand met by fuel transformer
-        """
-
-        return demand
-
-    def fuel_usage(self, demand):
-        """fuel used in kWh
-
-        Arguments:
-            demand {float} -- unmet demand
+        Args:
+            demand, unmet demand
 
         Returns:
-            float -- fuel used in kWh
+            float, fuel used
         """
-
-        fuel_usage = demand / self.efficiency
-
-        return fuel_usage
+        return demand / self.efficiency
