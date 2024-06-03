@@ -2,10 +2,12 @@ from dataclasses import dataclass
 import logging
 import numpy as np
 import pandas as pd
+from typing import Callable
 
 from .models import (
     HP,
     ModelName,
+    DataInput,
     Lorentz,
     StandardTestRegression,
     GenericRegression,
@@ -19,14 +21,13 @@ from ..environment import weather
 
 LOG = logging.getLogger(__name__)
 
-
 @dataclass
 class HpDemand:
     demand: float
     elec: float
 
 
-class HeatPump(object):
+class HeatPump:
     def __init__(
         self,
         hp_type: HP,
@@ -36,8 +37,8 @@ class HeatPump(object):
         minimum_runtime: float,
         minimum_output: float,
         data_input: str,
-        flow_temp_source: pd.DataFrame,
-        return_temp: pd.DataFrame,
+        flow_temp_source: int| float | pd.Series | np.ndarray,
+        return_temp: int| float | pd.Series | np.ndarray,
         hp_ambient_temp: pd.DataFrame,
         simple_cop: float = None,
         lorentz_inputs: dict = None,
@@ -55,7 +56,7 @@ class HeatPump(object):
             data_input, type of data input, peak or integrated
             flow_temp, required temperatures out of HP
             return_temp, inlet temp to HP
-            hp_ambient_temp, ambient conditions of heat source
+            hp_ambient_temp, ambient conditions of heat source for whole year
             simple_cop, COP for simple model, default: None
             lorentz_inputs, default: None
             standard_inputs, default: None
@@ -74,8 +75,46 @@ class HeatPump(object):
         self.lorentz_inputs = lorentz_inputs
         self.standard_inputs = standard_inputs
 
-        self._model = None
         self.model = modelling_approach
+
+    @staticmethod
+    def _check_full_year(func: Callable):
+        def _full_year_data(self, data: int | float | np.ndarray | pd.DataFrame | pd.Series):
+            if isinstance(data, int) or isinstance(data, float):
+                data = np.full((ANNUAL_HOURS,), data)
+            if data.shape[0] != ANNUAL_HOURS:
+                msg = f"Data {func.__name__} is not provided for {data.shape[0]} hours, not a full year of {ANNUAL_HOURS} hours"
+                LOG.error(msg)
+                raise ValueError(msg)
+            func(self, data)
+        return _full_year_data
+
+    @property
+    def flow_temp_source(self):
+        return self._flow_temp_source
+
+    @flow_temp_source.setter
+    @_check_full_year
+    def flow_temp_source(self, data: np.ndarray | pd.Series):
+        self._flow_temp_source = data
+
+    @property
+    def return_temp(self):
+        return self._return_temp
+
+    @return_temp.setter
+    @_check_full_year
+    def return_temp(self, data: np.ndarray | pd.Series):
+        self._return_temp = data
+
+    @property
+    def hp_ambient_temp(self):
+        return self._hp_ambient_temp
+
+    @hp_ambient_temp.setter
+    @_check_full_year
+    def hp_ambient_temp(self, data: np.ndarray | pd.DataFrame | pd.Series):
+        self._hp_ambient_temp = data
 
     @property
     def model(self) -> PerformanceModel:
@@ -126,13 +165,13 @@ class HeatPump(object):
                 LOG.error(msg)
                 raise KeyError(msg)
 
-    def heat_resource(self):
+    def heat_resource(self) -> pd.DataFrame:
         """accessing the heat resource
 
         takes the hp resource from the weather class
 
         Returns:
-            dataframe -- ambient temperature for heat source of heat pump
+            dataframe, ambient temperature for heat source of heat pump
         """
         HP_resource = weather.Weather(
             air_temperature=self.hp_ambient_temp["air_temperature"],
@@ -168,7 +207,7 @@ class HeatPump(object):
             # TODO: change mpc to be clearer about how it uses cop and duty
             # cop needs to be low to not break the mpc solver
             # duty being zero means it won't choose it anyway
-            cop = np.empty((ANNUAL_HOURS,)).fill(0.5)
+            cop = np.full((ANNUAL_HOURS,), 0.5)
             duty = np.zeros((ANNUAL_HOURS,))
             return PerformanceArray(cop, duty)
 
@@ -179,8 +218,8 @@ class HeatPump(object):
         match self.model:
             case Simple():
                 return PerformanceArray(
-                    np.empty((ANNUAL_HOURS,)).fill(self.model.cop),
-                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty),
+                    np.full((ANNUAL_HOURS,), self.model.cop()),
+                    np.full((ANNUAL_HOURS,), self.model.duty()),
                 )
 
             case Lorentz():
@@ -191,13 +230,13 @@ class HeatPump(object):
                         ambient_temp.values,
                         ambient_temp.values - self.ambient_delta_t,
                     ),
-                    np.empty((ANNUAL_HOURS,)).fill(self.model.duty(self.capacity)),
+                    np.full((ANNUAL_HOURS,), self.model.duty(self.capacity)),
                 )
 
             case GenericRegression():
                 return PerformanceArray(
                     self.model.cop(self.flow_temp_source.values, ambient_temp.values),
-                    np.empty((ANNUAL_HOURS,)).fill(duty_x),
+                    np.full((ANNUAL_HOURS,), duty_x),
                 )
 
             case StandardTestRegression():
@@ -207,21 +246,22 @@ class HeatPump(object):
                 # data not done to standards
                 # TODO: check this logic against original code
                 factor = np.ones(ambient_temp.shape)
-                if self.data_input == "Integrated performance":
-                    factor = 1.0
-                elif self.data_input == "Peak performance":
-                    if self.hp_type == HP.ASHP:
-                        factor[ambient_temp <= 5.0] = 0.9
-                    else:
-                        msg = (
-                            f"Peak performance option not available for {self.hp_type}"
-                        )
+                match self.data_input:
+                    case DataInput.INTEGRATED:
+                        factor = 1.0
+                    case DataInput.PEAK:
+                        if self.hp_type == HP.ASHP:
+                            factor[ambient_temp <= 5.0] = 0.9
+                        else:
+                            msg = (
+                                f"Peak performance option not available for {self.hp_type}"
+                            )
+                            LOG.error(msg)
+                            raise ValueError(msg)
+                    case _:
+                        msg = f"{self.data_input} is not valid for {self.model.__class__}"
                         LOG.error(msg)
                         raise ValueError(msg)
-                else:
-                    msg = f"{self.data_input} is not valid for {self.model.__class__}"
-                    LOG.error(msg)
-                    raise ValueError(msg)
 
                 return PerformanceArray(
                     cop * factor, self.model.duty(ambient_temp, self.flow_temp_source)
@@ -235,10 +275,7 @@ class HeatPump(object):
     def elec_usage(self, demand: float, hp_performance: PerformanceValue) -> float:
         """electricity usage of hp for timestep given a thermal demand
 
-        calculates the electrical usage of the heat pump given a heat demand
-        outputs a dataframe of heat demand, heat pump heat demand,
-        heat pump elec demand, cop, duty, and leftover
-        (only non-zero for fixed speed HP)
+        Calculates the electrical usage of the heat pump given a heat demand.
 
         Args:
             demand, thermal demand to be met by heat pump
@@ -261,7 +298,7 @@ class HeatPump(object):
         Args:
             elec_supply, electricity supply used by heat pump
             hp_performance, PerformanceValue at specific timestep
-            heat_demand, heat demand to be met of timestep
+            heat_demand, heat demand to be met at timestep
 
         Returns:
             HpDemand object defining heat demand met by hp and electricity usage

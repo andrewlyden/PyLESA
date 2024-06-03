@@ -32,3 +32,8 @@ class ModelName(str, Enum, metaclass=SingleTypeCheck):
     LORENTZ = "LORENTZ"
     GENERIC = "GENERIC REGRESSION"
     STANDARD = "STANDARD TEST REGRESSION"
+
+
+class DataInput(str, Enum, metaclass=SingleTypeCheck):
+    INTEGRATED = "INTEGRATED PERFORMANCE"
+    PEAK = "PEAK PERFORMANCE"

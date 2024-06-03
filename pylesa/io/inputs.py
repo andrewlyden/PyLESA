@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..constants import INDIR
-from ..heat.models import HP, ModelName
+from ..heat.models import HP, ModelName, DataInput
 
 LOG = logging.getLogger(__name__)
 
@@ -197,7 +197,14 @@ class Inputs(object):
 
         ambient_delta_t = hp['ambient_delta_t'][0]
         minimum_runtime = hp['minimum_runtime'][0]
-        data_input = hp['data_input'][0]
+
+        _data_input = hp['data_input'][0].upper()
+        if _data_input not in DataInput:
+            msg = f"Data input type {_data_input} is not one of {[_.value for _ in DataInput]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        data_input = DataInput.from_value(_data_input)
+
         minimum_output = hp['minimum_output'][0]
 
         inputs = {'heat_pump_type': hp_type,

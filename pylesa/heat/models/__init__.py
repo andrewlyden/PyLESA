@@ -1,4 +1,4 @@
-from .enums import HP, ModelName
+from .enums import HP, ModelName, DataInput
 from .generic_regression import GenericRegression
 from .lorentz import Lorentz
 from .performance import PerformanceArray, PerformanceValue, PerformanceModel

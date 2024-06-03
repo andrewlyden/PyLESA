@@ -9,7 +9,7 @@ def arr(value: float):
 
 class TestLorentz:
     def test_cop_lorentz(self):
-        cop, flow, ret, ambin, ambout = 2.8, 3.0, 70.0, 40.0, 12.0
+        cop, flow, ret, ambin, ambout = 2.8, 70.0, 40.0, 12., 10.
         hp = Lorentz(2.8, flow, ret, ambin, ambout, 1000.0)
         assert isinstance(hp, PerformanceModel)
         assert hp.cop(flow, ret, ambin, ambout) == cop
@@ -19,7 +19,7 @@ class TestLorentz:
         assert hp.cop(flow, ret, ambin, ambout - 2.0) < cop
 
     def test_hp_duty(self):
-        cop, flow, ret, ambin, ambout = 2.8, 3.0, 70.0, 40.0, 12.0
+        cop, flow, ret, ambin, ambout = 2.8, 70.0, 40.0, 12., 10.
         hp = Lorentz(cop, flow, ret, ambin, ambout, 1000.0)
         assert hp.duty(3.0) == 3.0
         assert hp.duty(5000.0) == 1000.0 * cop
