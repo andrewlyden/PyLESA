@@ -56,9 +56,7 @@ class HeatPump(object):
             flow_temp, required temperatures out of HP
             return_temp, inlet temp to HP
             hp_ambient_temp, ambient conditions of heat source
-
-        Kwargs: all these are for inputs, bar simple, for different modelling approaches
-            simple_cop, only COP for simple, default: None
+            simple_cop, COP for simple model, default: None
             lorentz_inputs, default: None
             standard_inputs, default: None
         """
@@ -136,7 +134,6 @@ class HeatPump(object):
         Returns:
             dataframe -- ambient temperature for heat source of heat pump
         """
-
         HP_resource = weather.Weather(
             air_temperature=self.hp_ambient_temp["air_temperature"],
             water_temperature=self.hp_ambient_temp["water_temperature"],
@@ -165,7 +162,7 @@ class HeatPump(object):
         """performance over year of heat pump
 
         Returns:
-            Performance object defining cop and duty for each hour timestep in year
+            PerformanceArray defining cop and duty for each hour timestep in year
         """
         if self.capacity == 0:
             # TODO: change mpc to be clearer about how it uses cop and duty

@@ -22,7 +22,7 @@ class Lorentz(PerformanceModel):
 
         Based on EnergyPRO method.
 
-        Arguments:
+        Args:
             cop_spec, cop at specified conditions
             flow_temp_spec, temperature from HP spec
             return_temp_spec, tempature to HP spec
@@ -120,7 +120,7 @@ class Lorentz(PerformanceModel):
 
         Ensures capacity is not exceeded.
 
-        Arguments:
+        Args:
             capacity,  electrical capacity of heat pump
 
         Returns:

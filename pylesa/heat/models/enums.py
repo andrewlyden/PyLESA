@@ -28,7 +28,7 @@ class HP(str, Enum, metaclass=SingleTypeCheck):
 
 
 class ModelName(str, Enum, metaclass=SingleTypeCheck):
-    SIMPLE = "Simple"
-    LORENTZ = "Lorentz"
-    GENERIC = "Generic regression"
-    STANDARD = "Standard test regression"
+    SIMPLE = "SIMPLE"
+    LORENTZ = "LORENTZ"
+    GENERIC = "GENERIC REGRESSION"
+    STANDARD = "STANDARD TEST REGRESSION"

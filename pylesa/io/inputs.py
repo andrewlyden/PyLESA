@@ -179,19 +179,21 @@ class Inputs(object):
         hp = self.container['hp_basics']
 
         # the inputs which specify the heat pump to be modelled
-        if hp['heat_pump_type'][0] not in HP:
-            msg = f"Heat pump type {hp['heat_pump_type'][0]} is not one of {[_.value for _ in HP]}"
+        _heat_pump_type = hp['heat_pump_type'][0].upper()
+        if _heat_pump_type not in HP:
+            msg = f"Heat pump type {_heat_pump_type} is not one of {[_.value for _ in HP]}"
             LOG.error(msg)
             raise ValueError(msg)
-        hp_type = HP.from_value(hp['heat_pump_type'][0])
+        hp_type = HP.from_value(_heat_pump_type)
 
         capacity = hp['capacity'][0]
 
-        if hp['modelling_approach'][0] not in ModelName:
-            msg = f"Heat pump modelling approach {hp['modelling_approach'][0]} is not one of {[_.value for _ in ModelName]}"
+        _modelling_approach = hp['modelling_approach'][0].upper()
+        if _modelling_approach not in ModelName:
+            msg = f"Heat pump modelling approach {_modelling_approach} is not one of {[_.value for _ in ModelName]}"
             LOG.error(msg)
             raise ValueError(msg)
-        modelling_approach = ModelName.from_value(hp['modelling_approach'][0])
+        modelling_approach = ModelName.from_value(_modelling_approach)
 
         ambient_delta_t = hp['ambient_delta_t'][0]
         minimum_runtime = hp['minimum_runtime'][0]
