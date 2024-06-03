@@ -17,11 +17,11 @@ class GenericRegression(PerformanceModel):
         self.pump = pump
 
     @property
-    def pump(self):
+    def pump(self) -> HP:
         return self._pump
 
     @pump.setter
-    def pump(self, pump):
+    def pump(self, pump: HP):
         if not isinstance(pump, HP):
             msg = f"{pump} is not a valid heat pump option, must be one of {[_.value for _ in HP]}"
             LOG.error(msg)
@@ -32,16 +32,13 @@ class GenericRegression(PerformanceModel):
         self, flow_temp: np.ndarray[float], ambient_temp: np.ndarray[float]
     ) -> np.ndarray[float]:
         """Array based COP calculation
-        
+
         Args:
             flow_temp, array of flow temperatures in degrees C
             ambient_temp, array of ambient temperatures in degrees C
 
         Returns:
             array of COP values
-
-        Raises:
-            KeyError if heat pump type is invalid
         """
         # account for defrosting below 5 drg
         factor = np.ones(flow_temp.shape)
@@ -64,15 +61,12 @@ class GenericRegression(PerformanceModel):
 
     def duty(self, ambient_temp: np.ndarray[float]) -> np.ndarray[float]:
         """Array based duty calculation
-        
+
         Args:
             ambient_temp, array of ambient temperatures in degrees C
 
         Returns:
             array of duty values
-
-        Raises:
-            KeyError if heat pump type is invalid
         """
         # Note that self.pump has already been validated
         if self.pump is HP.ASHP:

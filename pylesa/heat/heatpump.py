@@ -78,6 +78,8 @@ class HeatPump:
 
     @staticmethod
     def _check_full_year(func: Callable):
+        """Decorator to check that a full years worth of data is supplied"""
+
         def _full_year_data(
             self, data: int | float | np.ndarray | pd.DataFrame | pd.Series
         ):
@@ -121,7 +123,7 @@ class HeatPump:
     @property
     def hp_type(self) -> HP:
         return self._hp_type
-    
+
     @hp_type.setter
     def hp_type(self, value: HP):
         if value not in HP:
@@ -133,7 +135,7 @@ class HeatPump:
     @property
     def data_input(self) -> HP:
         return self._data_input
-    
+
     @data_input.setter
     def data_input(self, value: DataInput):
         if value not in DataInput:
@@ -197,9 +199,6 @@ class HeatPump:
 
         Returns:
             dataframe, ambient temperature for heat source of heat pump
-        
-        Raises:
-            ValueError if heat pump type is invalid
         """
         HP_resource = weather.Weather(
             air_temperature=self.hp_ambient_temp["air_temperature"],
@@ -223,6 +222,9 @@ class HeatPump:
 
         Returns:
             PerformanceArray defining cop and duty for each hour timestep in year
+
+        Raises:
+            ValueError if incorrect input combinations are provided for StandardTestRegression
         """
         if self.capacity == 0:
             # TODO: change mpc to be clearer about how it uses cop and duty

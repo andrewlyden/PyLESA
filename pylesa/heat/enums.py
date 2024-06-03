@@ -38,6 +38,7 @@ class DataInput(str, Enum, metaclass=SingleTypeCheck):
     INTEGRATED = "INTEGRATED PERFORMANCE"
     PEAK = "PEAK PERFORMANCE"
 
+
 class Fuel(str, Enum, metaclass=SingleTypeCheck):
     GAS = "GAS"
     WOOD = "WOOD CHIPS"

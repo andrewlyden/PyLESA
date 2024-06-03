@@ -41,7 +41,9 @@ def basic_kwargs():
 class TestHeatPump:
     @pytest.fixture
     def hp(self, basic_kwargs):
-        return HeatPump(modelling_approach=ModelName.SIMPLE, simple_cop=2.8, **basic_kwargs)
+        return HeatPump(
+            modelling_approach=ModelName.SIMPLE, simple_cop=2.8, **basic_kwargs
+        )
 
     @pytest.mark.parametrize(
         "setter", ["flow_temp_source", "return_temp", "hp_ambient_temp"]
@@ -54,8 +56,8 @@ class TestHeatPump:
     def test_setter_numeric(self, hp: HeatPump):
         hp.flow_temp_source = 2
         assert np.allclose(hp.flow_temp_source, np.full((8760,), 2))
-        hp.flow_temp_source = 4.
-        assert np.allclose(hp.flow_temp_source, np.full((8760,), 4.))
+        hp.flow_temp_source = 4.0
+        assert np.allclose(hp.flow_temp_source, np.full((8760,), 4.0))
 
     def test_properties(self, hp, basic_kwargs):
         assert hp.minimum_runtime == basic_kwargs["minimum_runtime"]
@@ -64,16 +66,16 @@ class TestHeatPump:
         assert hp.capacity == basic_kwargs["capacity"]
 
     def test_performance_0_capacity(self, hp: HeatPump):
-        hp.capacity = 0.
+        hp.capacity = 0.0
         performance = hp.performance()
         assert isinstance(performance, PerformanceArray)
         assert np.allclose(performance.cop, np.full((8760,), 0.5))
-        assert np.allclose(performance.duty, np.full((8760,), 0.))
+        assert np.allclose(performance.duty, np.full((8760,), 0.0))
 
     def test_bad_model(self, basic_kwargs):
         with pytest.raises(KeyError):
             HeatPump(modelling_approach="bad", **basic_kwargs)
-    
+
     def test_bad_heatpump(self, basic_kwargs):
         basic_kwargs["hp_type"] = "bad"
         with pytest.raises(ValueError):
@@ -230,13 +232,20 @@ class TestHeatResource:
         return HeatPump(
             modelling_approach=ModelName.SIMPLE, simple_cop=2.8, **basic_kwargs
         )
-    
-    @pytest.mark.parametrize("hp_type,header", [(HP.ASHP, "air_temperature"), (HP.GSHP, "water_temperature"), (HP.WSHP, "water_temperature")])
+
+    @pytest.mark.parametrize(
+        "hp_type,header",
+        [
+            (HP.ASHP, "air_temperature"),
+            (HP.GSHP, "water_temperature"),
+            (HP.WSHP, "water_temperature"),
+        ],
+    )
     def test_heat_resource(self, hp: HeatPump, basic_kwargs, hp_type: HP, header: str):
         hp.hp_type = hp_type
         assert np.allclose(
             hp.heat_resource()["ambient_temp"].values,
-            basic_kwargs["hp_ambient_temp"][header].values
+            basic_kwargs["hp_ambient_temp"][header].values,
         )
 
 

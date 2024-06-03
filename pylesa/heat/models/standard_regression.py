@@ -43,7 +43,19 @@ class StandardTestRegression(PerformanceModel):
     def _train(
         self, xarr: np.ndarray, cosparr: np.ndarray, dutyarr: np.ndarray
     ) -> None:
-        """training model"""
+        """Trains the model
+
+        Args:
+            xarr: 2D array of flow and ambient temperatures
+            cosparr: 2D array of COSP data of shape (N, 1)
+            dutyarr: 2D array of duty data of shape (N, 1)
+
+        Returns:
+            None
+
+        Raises:
+            IndexError if input data shapes are incorrect
+        """
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
 
         if len(xarr.shape) != 2:
@@ -83,7 +95,7 @@ class StandardTestRegression(PerformanceModel):
         self._copmodel = model_cop
         self._dutymodel = model_duty
 
-    def _fit(self, x, x1) -> np.ndarray[float]:
+    def _fit(self, x: np.ndarray[float], x1: np.ndarray[float]) -> np.ndarray[float]:
         poly = PolynomialFeatures(degree=self._degree, include_bias=False)
         return poly.fit_transform(np.array([x, x1]).T)
 

@@ -15,6 +15,8 @@ class PerformanceValue:
 
 @dataclass
 class PerformanceArray:
+    """Holds indexable arrays of cop and duty data and checks shapes are compatible"""
+
     cop: np.ndarray[float]
     duty: np.ndarray[float]
 
@@ -29,10 +31,12 @@ class PerformanceArray:
             raise IndexError(msg)
 
     def __iter__(self):
+        """For iterating e.g. [i for i in PerformanceArray]"""
         for idx in range(self.cop.shape[0]):
             yield PerformanceValue(self.cop[idx], self.duty[idx])
 
     def __getitem__(self, index):
+        """For indexing e.g. PerformanceArray[10]"""
         return PerformanceValue(self.cop[index], self.duty[index])
 
 

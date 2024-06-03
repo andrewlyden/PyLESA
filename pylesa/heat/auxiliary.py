@@ -3,12 +3,14 @@
 contains class for auxiliaries which covers
 back up heaters
 """
+
 import logging
 from typing import Any, Dict
 
 from .enums import Fuel
 
 LOG = logging.getLogger(__name__)
+
 
 class Aux(object):
 
@@ -29,9 +31,9 @@ class Aux(object):
     @property
     def fuel(self) -> Fuel:
         return self._fuel
-    
+
     @fuel.setter
-    def fuel(self, fuel):
+    def fuel(self, fuel: Fuel):
         if fuel not in Fuel:
             msg = f"Invalid fuel type: {fuel}, must be one of {[_.value for _ in Fuel]}"
             LOG.error(msg)
