@@ -4,6 +4,7 @@ simplifies initialising all the models for use
 in the control scripts
 """
 import logging
+import pandas as pd
 from pathlib import Path
 from typing import Dict
 
@@ -94,7 +95,15 @@ def init(root: Path, subname: str) -> Dict[str, object]:
             msg = f"Performance modelling {inputs_basics['modelling_approach']} is not valid"
             LOG.error(msg)
             raise KeyError(msg)
-            
+    
+    _ambient_temp = pd.concat(
+        [
+            input_weather['air_temperature'],
+            input_weather['water_temperature']
+        ],
+        axis=1
+    )
+
     myHeatPump = heatpump.HeatPump(
         inputs_basics['heat_pump_type'],
         inputs_basics['modelling_approach'],
@@ -105,7 +114,7 @@ def init(root: Path, subname: str) -> Dict[str, object]:
         inputs_basics['data_input'],
         inputs_demands['source_temp'],
         inputs_demands['return_temp_DH'],
-        input_weather,
+        _ambient_temp,
         simple_cop=inputs_simple,
         lorentz_inputs=inputs_lorentz,
         standard_inputs=inputs_standard
