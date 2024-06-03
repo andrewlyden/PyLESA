@@ -43,6 +43,16 @@ Running `python -m pylesa --help` will display the following help message:
 
 A video discussing how to run `PyLESA` is available here: https://youtu.be/QsJut9ftCT4
 
+## Testing
+The `PyLESA` source code is tested using [pytest](https://docs.pytest.org/en/8.2.x/). The tests can be run locally by running the following command:
+
+```python
+source venv/bin/activate
+python -m pytest -svv
+# for test coverage reporting run:
+python -m pytest --cov=pylesa -svv --cov-report term-missing
+```
+
 ## References
 
 PhD Thesis - Modelling and design of local energy systems incorporating heat pumps, thermal storage, future tariffs, and model predictive control (https://doi.org/10.48730/8nz5-xb46)
