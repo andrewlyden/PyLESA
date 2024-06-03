@@ -41,6 +41,7 @@ class TestModelName:
     def test_options(self, model):
         assert model.upper() in ModelName
 
+
 class TestDataInput:
     def test_metaclass(self):
         assert isinstance(DataInput, SingleTypeCheck)

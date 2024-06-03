@@ -21,6 +21,7 @@ from ..environment import weather
 
 LOG = logging.getLogger(__name__)
 
+
 @dataclass
 class HpDemand:
     demand: float
@@ -37,8 +38,8 @@ class HeatPump:
         minimum_runtime: float,
         minimum_output: float,
         data_input: str,
-        flow_temp_source: int| float | pd.Series | np.ndarray,
-        return_temp: int| float | pd.Series | np.ndarray,
+        flow_temp_source: int | float | pd.Series | np.ndarray,
+        return_temp: int | float | pd.Series | np.ndarray,
         hp_ambient_temp: pd.DataFrame,
         simple_cop: float = None,
         lorentz_inputs: dict = None,
@@ -79,7 +80,9 @@ class HeatPump:
 
     @staticmethod
     def _check_full_year(func: Callable):
-        def _full_year_data(self, data: int | float | np.ndarray | pd.DataFrame | pd.Series):
+        def _full_year_data(
+            self, data: int | float | np.ndarray | pd.DataFrame | pd.Series
+        ):
             if isinstance(data, int) or isinstance(data, float):
                 data = np.full((ANNUAL_HOURS,), data)
             if data.shape[0] != ANNUAL_HOURS:
@@ -87,6 +90,7 @@ class HeatPump:
                 LOG.error(msg)
                 raise ValueError(msg)
             func(self, data)
+
         return _full_year_data
 
     @property
@@ -253,13 +257,13 @@ class HeatPump:
                         if self.hp_type == HP.ASHP:
                             factor[ambient_temp <= 5.0] = 0.9
                         else:
-                            msg = (
-                                f"Peak performance option not available for {self.hp_type}"
-                            )
+                            msg = f"Peak performance option not available for {self.hp_type}"
                             LOG.error(msg)
                             raise ValueError(msg)
                     case _:
-                        msg = f"{self.data_input} is not valid for {self.model.__class__}"
+                        msg = (
+                            f"{self.data_input} is not valid for {self.model.__class__}"
+                        )
                         LOG.error(msg)
                         raise ValueError(msg)
 
