@@ -12,7 +12,7 @@ from .io import inputs
 from .power import grid, renewables
 from .storage import hot_water_tank, electrical_storage
 from .heat import heatpump, auxiliary
-from .heat.models import ModelName
+from .heat.enums import ModelName
 
 LOG = logging.getLogger(__name__)
 

@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 from typing import Callable
 
+from .enums import HP, ModelName, DataInput
 from .models import (
-    HP,
-    ModelName,
-    DataInput,
     Lorentz,
     StandardTestRegression,
     GenericRegression,
@@ -37,7 +35,7 @@ class HeatPump:
         ambient_delta_t: float,
         minimum_runtime: float,
         minimum_output: float,
-        data_input: str,
+        data_input: DataInput,
         flow_temp_source: int | float | pd.Series | np.ndarray,
         return_temp: int | float | pd.Series | np.ndarray,
         hp_ambient_temp: pd.DataFrame,
@@ -121,6 +119,30 @@ class HeatPump:
         self._hp_ambient_temp = data
 
     @property
+    def hp_type(self) -> HP:
+        return self._hp_type
+    
+    @hp_type.setter
+    def hp_type(self, value: HP):
+        if value not in HP:
+            msg = f"Invalid heat pump type: {value}, must be one of {[_.value for _ in HP]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        self._hp_type = value
+
+    @property
+    def data_input(self) -> HP:
+        return self._data_input
+    
+    @data_input.setter
+    def data_input(self, value: DataInput):
+        if value not in DataInput:
+            msg = f"Invalid data input type: {value}, must be one of {[_.value for _ in DataInput]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        self._data_input = value
+
+    @property
     def model(self) -> PerformanceModel:
         return self._model
 
@@ -150,7 +172,6 @@ class HeatPump:
                 )
 
             case ModelName.GENERIC:
-                # Raises error if hp_type is invalid
                 self._model = GenericRegression(self.hp_type)
 
             case ModelName.STANDARD:
@@ -176,30 +197,26 @@ class HeatPump:
 
         Returns:
             dataframe, ambient temperature for heat source of heat pump
+        
+        Raises:
+            ValueError if heat pump type is invalid
         """
         HP_resource = weather.Weather(
             air_temperature=self.hp_ambient_temp["air_temperature"],
             water_temperature=self.hp_ambient_temp["water_temperature"],
         ).heatpump()
 
+        # self.hp_type has already been validated
         if self.hp_type == HP.ASHP:
-
             HP_resource = HP_resource.rename(
                 columns={"air_temperature": "ambient_temp"}
             )
             return HP_resource[["ambient_temp"]]
-
-        elif self.hp_type == HP.WSHP:
-
+        else:
             HP_resource = HP_resource.rename(
                 columns={"water_temperature": "ambient_temp"}
             )
             return HP_resource[["ambient_temp"]]
-
-        else:
-            msg = f"Invalid heat pump type: {self.hp_type}, must be {HP.ASHP} or {HP.WSHP}"
-            LOG.error(msg)
-            raise ValueError(msg)
 
     def performance(self) -> PerformanceArray:
         """performance over year of heat pump
@@ -248,7 +265,6 @@ class HeatPump:
 
                 # 15% reduction in performance if
                 # data not done to standards
-                # TODO: check this logic against original code
                 factor = np.ones(ambient_temp.shape)
                 match self.data_input:
                     case DataInput.INTEGRATED:

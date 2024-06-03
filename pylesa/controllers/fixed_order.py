@@ -19,6 +19,7 @@ from .. import initialise_classes
 from ..io import inputs
 from ..constants import OUTDIR
 from ..heat.models import PerformanceValue
+from ..heat.enums import Fuel
 
 LOG = logging.getLogger(__name__)
 
@@ -253,7 +254,7 @@ class FixedOrder(object):
             results['aux']['RES_to_demand'])
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price']
             density = 0.0
         else:
@@ -310,7 +311,7 @@ class FixedOrder(object):
         results['grid']['import_for_heat_pump_total'] = (
             results['grid']['import_for_heat_pump_to_heat_demand'] +
             results['grid']['import_for_heat_pump_to_TS'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +
@@ -517,7 +518,7 @@ class FixedOrder(object):
             results['heat_demand']['aux'])
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price']
             density = 0.0
         else:
@@ -581,7 +582,7 @@ class FixedOrder(object):
         results['grid']['import_for_heat_pump_total'] = (
             results['grid']['import_for_heat_pump_to_heat_demand'] +
             results['grid']['import_for_heat_pump_to_TS'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +
@@ -1071,7 +1072,7 @@ class FixedOrder(object):
 
     def EAUX_RES_to_demand(self, aux_left, RES_left, heat_unmet):
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
 
             # use up surplus with electric heater if exisitng
 
@@ -1185,7 +1186,7 @@ class FixedOrder(object):
                        source_temp, flow_temp, timestep,
                        ts_discharge, ts_charge):
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
 
             # how much can be input into the hot water tank
             state = 'charging'

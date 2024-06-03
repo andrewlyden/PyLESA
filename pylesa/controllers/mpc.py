@@ -12,7 +12,8 @@ import pickle
 from .. import initialise_classes, tools
 from ..io import inputs
 from ..constants import OUTDIR
-from ..heat.models import PerformanceValue, PerformanceArray
+from ..heat.models import PerformanceArray
+from ..heat.enums import Fuel
 
 LOG = logging.getLogger(__name__)
 
@@ -254,7 +255,7 @@ class Scheduler(object):
         # aux_cap = 1000
         aux = m.Var(value=prev_result['aux'], lb=0)
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_cost = m.Param(
                 value=list(self.import_cost[hour:final_hour]))
         else:
@@ -263,7 +264,7 @@ class Scheduler(object):
         # equations
 
         # different for electric since it can use RES production
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             # equalities
             m.Equations(
                 [soc_ES.dt() == ESc * charge_eff - ESd - loss_ES,
@@ -377,7 +378,7 @@ class Scheduler(object):
         if self.myHotWaterTank.capacity == 0:
             final_nodes_temp = prev_result['final_nodes_temp']
         else:
-            if self.myAux.fuel == 'Electric':
+            if self.myAux.fuel == Fuel.ELECTRIC:
                 # thermal_output = HPt[h] + aux[h]
                 next_nodes_temp = self.myHotWaterTank.new_nodes_temp(
                     state, prev_result['final_nodes_temp'], st[h], sdt, ft[h],
@@ -405,7 +406,7 @@ class Scheduler(object):
         results['RES']['HP'] = (
             (HPtrd[h] + HPtrs[h]) /
             hp_performance[timestep].cop)
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['RES']['aux'] = aux_rd[h] + aux_rs[h]
         results['RES']['export'] = export[h]
 
@@ -477,7 +478,7 @@ class Scheduler(object):
         results['aux']['demand'] = aux[h]
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price'] / 1000.
             density = 0.0
         else:
@@ -494,7 +495,7 @@ class Scheduler(object):
         results['grid']['import_for_ES'] = (
             results['ES']['charging_from_import'])
         results['grid']['total_export'] = results['RES']['export']
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +

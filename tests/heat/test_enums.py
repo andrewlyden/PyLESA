@@ -1,7 +1,7 @@
 from enum import Enum
 import pytest
 
-from pylesa.heat.models.enums import SingleTypeCheck, HP, ModelName, DataInput
+from pylesa.heat.enums import SingleTypeCheck, HP, ModelName, DataInput
 
 
 class Dummy(str, Enum, metaclass=SingleTypeCheck):
@@ -27,7 +27,7 @@ class TestHP:
         assert isinstance(HP, SingleTypeCheck)
 
     @pytest.mark.parametrize("hp", ["ASHP", "GSHP", "WSHP"])
-    def test_options(self, hp):
+    def test_hp_options(self, hp):
         assert hp in HP
 
 
@@ -38,7 +38,7 @@ class TestModelName:
     @pytest.mark.parametrize(
         "model", ["Simple", "Lorentz", "Generic regression", "Standard test regression"]
     )
-    def test_options(self, model):
+    def test_model_options(self, model):
         assert model.upper() in ModelName
 
 
@@ -46,6 +46,6 @@ class TestDataInput:
     def test_metaclass(self):
         assert isinstance(DataInput, SingleTypeCheck)
 
-    @pytest.mark.parametrize("data", ["Integrated performance", "Peak performance"])
-    def test_options(self, data):
+    @pytest.mark.parametrize("data", ["INTEGRATED PERFORMANCE", "PEAK PERFORMANCE"])
+    def test_data_options(self, data):
         assert data in DataInput

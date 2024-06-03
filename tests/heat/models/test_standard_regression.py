@@ -47,13 +47,24 @@ class TestStandardTestRegression:
         assert 1000.0 < duty[1] < 2000.0
         assert duty[1] > duty[0]
 
-    def test_bad_shapes(self, xarr, cosparr, dutyarr):
+    def test_bad_xarr_shape(self, xarr, cosparr, dutyarr):
+        too_many_dims = np.zeros((1, 2, 3))
+        with pytest.raises(IndexError):
+            StandardTestRegression(too_many_dims, cosparr, dutyarr)
+
+        bad_second_dim = np.concatenate([xarr, xarr], axis=1)
+        with pytest.raises(IndexError):
+            StandardTestRegression(bad_second_dim, cosparr, dutyarr)
+
+    def test_mismatch_xarr_dimensions(self, xarr, cosparr, dutyarr):
         with pytest.raises(IndexError):
             StandardTestRegression(xarr[:-1, :], cosparr, dutyarr)
 
+    def test_mismatch_cosparr_dimensions(self, xarr, cosparr, dutyarr):
         with pytest.raises(IndexError):
             StandardTestRegression(xarr, cosparr[:-1], dutyarr)
 
+    def test_mismatch_dutyarr_dimensions(self, xarr, cosparr, dutyarr):
         with pytest.raises(IndexError):
             StandardTestRegression(xarr, cosparr, dutyarr[:-1])
 

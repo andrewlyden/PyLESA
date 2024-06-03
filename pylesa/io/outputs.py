@@ -12,6 +12,7 @@ from typing import Dict
 from . import inputs
 from .. import tools as t
 from ..constants import INDIR, OUTDIR
+from ..heat.enums import Fuel
 from ..power import grid
 
 LOG = logging.getLogger(__name__)
@@ -1413,7 +1414,7 @@ class Calcs(object):
         # different for electric aux/non electric aux
         # with electric aux cost included in import
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             opex = np.sum(-cashflow)
         else:
             opex = np.sum(-cashflow) + np.sum(aux_cost)
@@ -1427,7 +1428,7 @@ class Calcs(object):
 
         heat_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 heat_cost[i] = (
                     (results[i]['grid']['total_import'] -
@@ -1459,7 +1460,7 @@ class Calcs(object):
 
         heat_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 heat_cost[i] = (
                     (results[i]['grid']['total_import'] -
@@ -1499,7 +1500,7 @@ class Calcs(object):
 
         cashflow = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 cashflow[i] = (
                     (-results[i]['grid']['cashflow'] / 1000.))
@@ -1549,7 +1550,7 @@ class Calcs(object):
 
         energy_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 energy_cost[i] = (
                     (-results[i]['grid']['cashflow'] / 1000.))

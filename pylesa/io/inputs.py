@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..constants import INDIR
-from ..heat.models import HP, ModelName, DataInput
+from ..heat.enums import HP, ModelName, DataInput
 
 LOG = logging.getLogger(__name__)
 

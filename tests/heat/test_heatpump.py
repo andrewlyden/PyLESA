@@ -3,15 +3,13 @@ import pandas as pd
 import pytest
 
 from pylesa.constants import ANNUAL_HOURS
+from pylesa.heat.enums import HP, ModelName, DataInput
 from pylesa.heat.models import (
-    ModelName,
-    HP,
     Simple,
     GenericRegression,
     StandardTestRegression,
     Lorentz,
     PerformanceArray,
-    DataInput,
     PerformanceValue,
 )
 from pylesa.heat.heatpump import HeatPump, HpDemand
@@ -41,9 +39,45 @@ def basic_kwargs():
 
 
 class TestHeatPump:
+    @pytest.fixture
+    def hp(self, basic_kwargs):
+        return HeatPump(modelling_approach=ModelName.SIMPLE, simple_cop=2.8, **basic_kwargs)
+
+    @pytest.mark.parametrize(
+        "setter", ["flow_temp_source", "return_temp", "hp_ambient_temp"]
+    )
+    def test_bad_length_data(self, hp: HeatPump, setter):
+        short_data = np.ones((10,))
+        with pytest.raises(ValueError):
+            exec(f"hp.{setter} = short_data")
+
+    def test_setter_numeric(self, hp: HeatPump):
+        hp.flow_temp_source = 2
+        assert np.allclose(hp.flow_temp_source, np.full((8760,), 2))
+        hp.flow_temp_source = 4.
+        assert np.allclose(hp.flow_temp_source, np.full((8760,), 4.))
+
+    def test_properties(self, hp, basic_kwargs):
+        assert hp.minimum_runtime == basic_kwargs["minimum_runtime"]
+        assert hp.minimum_output == basic_kwargs["minimum_output"]
+        assert hp.data_input == basic_kwargs["data_input"]
+        assert hp.capacity == basic_kwargs["capacity"]
+
+    def test_performance_0_capacity(self, hp: HeatPump):
+        hp.capacity = 0.
+        performance = hp.performance()
+        assert isinstance(performance, PerformanceArray)
+        assert np.allclose(performance.cop, np.full((8760,), 0.5))
+        assert np.allclose(performance.duty, np.full((8760,), 0.))
+
     def test_bad_model(self, basic_kwargs):
         with pytest.raises(KeyError):
             HeatPump(modelling_approach="bad", **basic_kwargs)
+    
+    def test_bad_heatpump(self, basic_kwargs):
+        basic_kwargs["hp_type"] = "bad"
+        with pytest.raises(ValueError):
+            HeatPump(modelling_approach=ModelName.SIMPLE, **basic_kwargs)
 
 
 class TestSimple:
@@ -73,19 +107,6 @@ class TestSimple:
         with pytest.raises(ValueError):
             # simple_cop is missing
             HeatPump(modelling_approach=model, **basic_kwargs)
-
-    @pytest.mark.parametrize(
-        "setter", ["flow_temp_source", "return_temp", "hp_ambient_temp"]
-    )
-    def test_bad_length_data(self, hp, setter):
-        short_data = np.ones((10,))
-        with pytest.raises(ValueError):
-            exec(f"hp.{setter} = short_data")
-
-    def test_properties(self, hp, basic_kwargs):
-        assert hp.minimum_runtime == basic_kwargs["minimum_runtime"]
-        assert hp.minimum_output == basic_kwargs["minimum_output"]
-        assert hp.data_input == basic_kwargs["data_input"]
 
 
 class TestGeneric:
@@ -204,8 +225,19 @@ class TestLorentz:
 
 
 class TestHeatResource:
-    def test_heat_resource(self):
-        pass
+    @pytest.fixture
+    def hp(self, basic_kwargs):
+        return HeatPump(
+            modelling_approach=ModelName.SIMPLE, simple_cop=2.8, **basic_kwargs
+        )
+    
+    @pytest.mark.parametrize("hp_type,header", [(HP.ASHP, "air_temperature"), (HP.GSHP, "water_temperature"), (HP.WSHP, "water_temperature")])
+    def test_heat_resource(self, hp: HeatPump, basic_kwargs, hp_type: HP, header: str):
+        hp.hp_type = hp_type
+        assert np.allclose(
+            hp.heat_resource()["ambient_temp"].values,
+            basic_kwargs["hp_ambient_temp"][header].values
+        )
 
 
 class TestElecUsage:

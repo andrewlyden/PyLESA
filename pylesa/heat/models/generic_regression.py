@@ -6,8 +6,8 @@ See Staffel paper on review of domestic heat pumps for coefficients.
 import logging
 import numpy as np
 
-from .enums import HP
 from .performance import PerformanceModel
+from ..enums import HP
 
 LOG = logging.getLogger(__name__)
 
@@ -31,44 +31,51 @@ class GenericRegression(PerformanceModel):
     def cop(
         self, flow_temp: np.ndarray[float], ambient_temp: np.ndarray[float]
     ) -> np.ndarray[float]:
-        """Array based COP calculation"""
+        """Array based COP calculation
+        
+        Args:
+            flow_temp, array of flow temperatures in degrees C
+            ambient_temp, array of ambient temperatures in degrees C
+
+        Returns:
+            array of COP values
+
+        Raises:
+            KeyError if heat pump type is invalid
+        """
         # account for defrosting below 5 drg
         factor = np.ones(flow_temp.shape)
         sub_5 = ambient_temp <= 5.0
         factor[sub_5] = 0.9
 
-        match self.pump:
-
-            case HP.ASHP:
-                return (
-                    6.81
-                    - 0.121 * (flow_temp - ambient_temp)
-                    + 0.00063 * (flow_temp - ambient_temp) ** 2
-                ) * factor
-
-            case HP.GSHP | HP.WSHP:
-                return (
-                    8.77
-                    - 0.15 * (flow_temp - ambient_temp)
-                    + 0.000734 * (flow_temp - ambient_temp) ** 2
-                ) * factor
-
-            case _:
-                msg = f"Cannot calculate cop for heatpump {self.pump}, must be one of {[HP.ASHP, HP.GSHP, HP.WSHP]}"
-                LOG.error(msg)
-                raise KeyError(msg)
+        # Note that self.pump has already been validated
+        if self.pump is HP.ASHP:
+            return (
+                6.81
+                - 0.121 * (flow_temp - ambient_temp)
+                + 0.00063 * (flow_temp - ambient_temp) ** 2
+            ) * factor
+        else:
+            return (
+                8.77
+                - 0.15 * (flow_temp - ambient_temp)
+                + 0.000734 * (flow_temp - ambient_temp) ** 2
+            ) * factor
 
     def duty(self, ambient_temp: np.ndarray[float]) -> np.ndarray[float]:
-        """Array based duty calculation"""
-        match self.pump:
+        """Array based duty calculation
+        
+        Args:
+            ambient_temp, array of ambient temperatures in degrees C
 
-            case HP.ASHP:
-                return 5.80 + 0.21 * (ambient_temp)
+        Returns:
+            array of duty values
 
-            case HP.GSHP | HP.WSHP:
-                return 9.37 + 0.30 * ambient_temp
-
-            case _:
-                msg = f"Cannot calculate cop for heatpump {self.pump}, must be one of {[HP.ASHP, HP.GSHP, HP.WSHP]}"
-                LOG.error(msg)
-                raise KeyError(msg)
+        Raises:
+            KeyError if heat pump type is invalid
+        """
+        # Note that self.pump has already been validated
+        if self.pump is HP.ASHP:
+            return 5.80 + 0.21 * (ambient_temp)
+        else:
+            return 9.37 + 0.30 * ambient_temp

@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from pylesa.heat.models import HP, GenericRegression, PerformanceModel
+from pylesa.heat.enums import HP
+from pylesa.heat.models import GenericRegression, PerformanceModel
 
 
 @pytest.fixture

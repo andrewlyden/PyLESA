@@ -37,3 +37,9 @@ class ModelName(str, Enum, metaclass=SingleTypeCheck):
 class DataInput(str, Enum, metaclass=SingleTypeCheck):
     INTEGRATED = "INTEGRATED PERFORMANCE"
     PEAK = "PEAK PERFORMANCE"
+
+class Fuel(str, Enum, metaclass=SingleTypeCheck):
+    GAS = "GAS"
+    WOOD = "WOOD CHIPS"
+    KEROSENE = "KEROSENE"
+    ELECTRIC = "ELECTRIC"
