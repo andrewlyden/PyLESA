@@ -13,25 +13,32 @@ from pylesa.main import main
 def fixed_order_input():
     return Path("tests/data/fixed_order.xlsx").resolve()
 
-
 @pytest.fixture
-def outdir():
-    return Path("tests/data").resolve()
-
-
-@pytest.fixture
-def fixed_order_paths(fixed_order_input: Path, outdir: Path) -> List[Path]:
-    runname = fixed_order_input.stem
+def csvpaths():
+    pth = Path()
     return [
-        outdir / runname / "outputs" / "KPIs" / "KPI_economic_fixed_order.csv",
-        outdir / runname / "outputs" / "KPIs" / "KPI_technical_fixed_order.csv",
-        outdir / runname / "outputs" / "KPIs" / "output_fixed_order.csv",
+        pth / "outputs" / "KPIs" / "KPI_economic_fixed_order.csv",
+        pth / "outputs" / "KPIs" / "KPI_technical_fixed_order.csv",
+        pth / "outputs" / "KPIs" / "output_fixed_order.csv",
     ]
 
+@pytest.fixture
+def fixed_order_paths(fixed_order_input: Path, csvpaths) -> List[Path]:
+    runname = fixed_order_input.stem
+    return [
+        Path("tests/data").resolve() / runname / csvpth for csvpth in csvpaths
+    ]
+
+@pytest.fixture
+def temp_paths(fixed_order_input: Path, tmpdir: Path, csvpaths) -> List[Path]:
+    runname = fixed_order_input.stem
+    return [
+        tmpdir / runname / csvpth for csvpth in csvpaths
+    ]
 
 class TestPylesa:
     def test_regression(
-        self, fixed_order_input: Path, outdir: Path, fixed_order_paths: List[Path]
+        self, fixed_order_input: Path, fixed_order_paths: List[Path], tmpdir: Path, temp_paths: List[Path]
     ):
         # Load existing results, these are committed to the repo
         targets = []
@@ -39,10 +46,10 @@ class TestPylesa:
             targets.append(pd.read_csv(csvpath))
 
         # Run pylesa
-        main(fixed_order_input, outdir, overwrite=True)
+        main(fixed_order_input, tmpdir)
 
         # Check new results
-        for idx, outpath in enumerate(fixed_order_paths):
+        for idx, outpath in enumerate(temp_paths):
             expected = targets[idx]
             got = pd.read_csv(outpath)
             assert expected.columns.all() == got.columns.all()
