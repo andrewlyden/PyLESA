@@ -9,7 +9,7 @@ from .controllers import fixed_order
 from .controllers import mpc
 from .io import inputs, outputs, read_excel
 from .io.paths import valid_dir, valid_fpath
-from .process import OutputProcess
+from .mp.process import OutputProcess
 
 LOG = logging.getLogger(__name__)
 
