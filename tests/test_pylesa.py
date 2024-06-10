@@ -37,8 +37,9 @@ def temp_paths(fixed_order_input: Path, tmpdir: Path, csvpaths) -> List[Path]:
 
 
 class TestPylesa:
+    # Test single core and multiprocessing run options
     @pytest.mark.parametrize("singlecore", [True, False])
-    def test_regression(
+    def test_main(
         self,
         fixed_order_input: Path,
         fixed_order_paths: List[Path],
