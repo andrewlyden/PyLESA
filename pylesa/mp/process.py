@@ -1,4 +1,5 @@
 """Run jobs in separate process"""
+
 import logging.handlers
 from multiprocessing import Process, Queue
 import logging
@@ -14,12 +15,15 @@ LOG = logging.getLogger(__name__)
 
 class OutputProcess:
     """Run func on a separate process submitting jobs via a queue"""
+
     def __init__(self):
         self._job_queue = Queue()
         self._log_queue = Queue()
         self._process = None
         # Create queue listener to forward messages to existing handlers
-        self._logger = logging.handlers.QueueListener(self._log_queue, *logging.getLogger().handlers, respect_handler_level=True)
+        self._logger = logging.handlers.QueueListener(
+            self._log_queue, *logging.getLogger().handlers, respect_handler_level=True
+        )
 
     @staticmethod
     def _run_job(func: Callable, job_queue: Queue, log_queue: Queue):
@@ -45,9 +49,11 @@ class OutputProcess:
         if self._logger:
             self._logger.start()
         # Start process
-        self._process = Process(target=self._run_job, args=(func, self._job_queue, self._log_queue))
+        self._process = Process(
+            target=self._run_job, args=(func, self._job_queue, self._log_queue)
+        )
         self._process.start()
-    
+
     def submit(self, args: List[Any]):
         self._job_queue.put(args)
 
@@ -73,7 +79,7 @@ class OutputProcess:
     def cancel(self, block=True):
         self._job_queue.empty()
         self.stop(block)
-    
+
     def is_alive(self):
         try:
             return self._process.is_alive()

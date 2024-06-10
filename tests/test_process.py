@@ -15,12 +15,14 @@ def task(filepath: str):
         f.write("test")
         LOG.info(f"Wrote: {filepath.stem}")
 
+
 @pytest.fixture
 def process():
     p = OutputProcess()
     p.start(task)
     yield p
     p.stop()
+
 
 class TestOutputProcess:
     def test_run_job(self, process: OutputProcess, tmpdir):
@@ -40,8 +42,9 @@ class TestOutputProcess:
             process.submit([bad_path])
             # Stop waits for jobs to finish and queue to be emptied
             process.stop()
-        
+
         assert not process.is_alive()
+
 
 class TestLogging:
     @pytest.fixture
@@ -59,7 +62,7 @@ class TestLogging:
         p.start(task)
         yield p, stream_handler
         p.stop()
-    
+
     def test_logging(self, process_and_stream, tmpdir):
         process, stream = process_and_stream
 

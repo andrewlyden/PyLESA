@@ -13,6 +13,7 @@ from pylesa.main import main
 def fixed_order_input():
     return Path("tests/data/fixed_order.xlsx").resolve()
 
+
 @pytest.fixture
 def csvpaths():
     pth = Path()
@@ -22,23 +23,26 @@ def csvpaths():
         pth / "outputs" / "KPIs" / "output_fixed_order.csv",
     ]
 
+
 @pytest.fixture
 def fixed_order_paths(fixed_order_input: Path, csvpaths) -> List[Path]:
     runname = fixed_order_input.stem
-    return [
-        Path("tests/data").resolve() / runname / csvpth for csvpth in csvpaths
-    ]
+    return [Path("tests/data").resolve() / runname / csvpth for csvpth in csvpaths]
+
 
 @pytest.fixture
 def temp_paths(fixed_order_input: Path, tmpdir: Path, csvpaths) -> List[Path]:
     runname = fixed_order_input.stem
-    return [
-        tmpdir / runname / csvpth for csvpth in csvpaths
-    ]
+    return [tmpdir / runname / csvpth for csvpth in csvpaths]
+
 
 class TestPylesa:
     def test_regression(
-        self, fixed_order_input: Path, fixed_order_paths: List[Path], tmpdir: Path, temp_paths: List[Path]
+        self,
+        fixed_order_input: Path,
+        fixed_order_paths: List[Path],
+        tmpdir: Path,
+        temp_paths: List[Path],
     ):
         # Load existing results, these are committed to the repo
         targets = []
