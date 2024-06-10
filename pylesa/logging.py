@@ -40,8 +40,10 @@ def setup_logging(level: enum.Enum):
     handlers = []
 
     # Log to a file on disk
+    # Level always set at least to INFO
     file_handler = logging.FileHandler(LOG_PATH, "w+")
     file_handler.setFormatter(logging.Formatter(FILE_LOG_FORMAT))
+    file_handler.setLevel(min(logging.INFO, level))
     handlers.append(file_handler)
 
     # Log to the console
