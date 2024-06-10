@@ -63,32 +63,28 @@ def run_plots(root: str | Path, subname: str):
     controller_info = myInputs.controller()['controller_info']
     timesteps = controller_info['total_timesteps']
 
-    jobs = []
-
     if timesteps == 8760:
         for period in ['Year', 'Winter', 'Summer']:
             myPlots = Plot(root, subname, period)
-            jobs.append(myPlots.operation)
-            jobs.append(myPlots.elec_demand_and_RES)
-            jobs.append(myPlots.HP_and_heat_demand)
-            jobs.append(myPlots.TS)
-            jobs.append(myPlots.ES)
-            jobs.append(myPlots.grid)
+            myPlots.operation()
+            myPlots.elec_demand_and_RES()
+            myPlots.HP_and_heat_demand()
+            myPlots.TS()
+            myPlots.ES()
+            myPlots.grid()
             if period == 'Year':
-                jobs.append(myPlots.RES_bar)
+                myPlots.RES_bar()
     else:
         period = 'User'
         myPlots = Plot(root, subname, period)
-        jobs.append(myPlots.operation)
-        jobs.append(myPlots.elec_demand_and_RES)
-        jobs.append(myPlots.HP_and_heat_demand)
-        jobs.append(myPlots.TS)
-        jobs.append(myPlots.ES)
-        jobs.append(myPlots.grid)
-        jobs.append(myPlots.RES_bar)
+        myPlots.operation()
+        myPlots.elec_demand_and_RES()
+        myPlots.HP_and_heat_demand()
+        myPlots.TS()
+        myPlots.ES()
+        myPlots.grid()
+        myPlots.RES_bar()
 
-    for job in jobs:
-        job()
     LOG.info(f"Written output files for: {subname}. Time taken: {int(round(time.time() - then,0))} seconds")
 
 def run_KPIs(root: str | Path):

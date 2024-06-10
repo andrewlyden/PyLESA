@@ -37,12 +37,14 @@ def temp_paths(fixed_order_input: Path, tmpdir: Path, csvpaths) -> List[Path]:
 
 
 class TestPylesa:
+    @pytest.mark.parametrize("singlecore", [True, False])
     def test_regression(
         self,
         fixed_order_input: Path,
         fixed_order_paths: List[Path],
         tmpdir: Path,
         temp_paths: List[Path],
+        singlecore: bool
     ):
         # Load existing results, these are committed to the repo
         targets = []
@@ -50,7 +52,7 @@ class TestPylesa:
             targets.append(pd.read_csv(csvpath))
 
         # Run pylesa
-        main(fixed_order_input, tmpdir)
+        main(fixed_order_input, tmpdir, singlecore=singlecore)
 
         # Check new results
         for idx, outpath in enumerate(temp_paths):

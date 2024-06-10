@@ -20,10 +20,7 @@ class OutputProcess:
         self._job_queue = Queue()
         self._log_queue = Queue()
         self._process = None
-        # Create queue listener to forward messages to existing handlers
-        self._logger = logging.handlers.QueueListener(
-            self._log_queue, *logging.getLogger().handlers, respect_handler_level=True
-        )
+        self._logger = None
 
     @staticmethod
     def _run_job(func: Callable, job_queue: Queue, log_queue: Queue):
@@ -45,9 +42,11 @@ class OutputProcess:
         # Ensure queues are empty
         self._job_queue.empty()
         self._log_queue.empty()
-        # Start logging thread
-        if self._logger:
-            self._logger.start()
+        # Create queue listener to forward messages to existing handlers
+        self._logger = logging.handlers.QueueListener(
+            self._log_queue, *logging.getLogger().handlers, respect_handler_level=True
+        )
+        self._logger.start()
         # Start process
         self._process = Process(
             target=self._run_job, args=(func, self._job_queue, self._log_queue)
@@ -63,8 +62,11 @@ class OutputProcess:
                 self._job_queue.put(SENTINEL)
                 if not block:
                     timeout = None
+
+                # Wait for process to join
                 if self.is_alive():
                     self._process.join(timeout=timeout)
+
                 if self._process.exitcode != 0:
                     msg = f"Output process exited with non-zero exit code: {self._process.exitcode}"
                     LOG.error(msg)
@@ -73,8 +75,11 @@ class OutputProcess:
             if self._process:
                 self._process.close()
                 self._job_queue.empty()
+                self._process = None
+
             if self._logger:
                 self._logger.stop()
+                self._logger = None
 
     def cancel(self, block=True):
         self._job_queue.empty()
@@ -82,6 +87,9 @@ class OutputProcess:
 
     def is_alive(self):
         try:
-            return self._process.is_alive()
+            if self._process:
+                return self._process.is_alive()
+            else:
+                return False
         except ValueError:
             return False
