@@ -45,6 +45,17 @@ class TestOutputProcess:
 
         assert not process.is_alive()
 
+    def test_cancel(self, process: OutputProcess):
+        process.cancel()
+        assert process._process is None
+        assert process._logger is None
+
+    def test_restart(self, process: OutputProcess):
+        process.cancel()
+        assert process._process is None
+        process.start(task)
+        assert process.is_alive()
+
 
 class TestLogging:
     @pytest.fixture
