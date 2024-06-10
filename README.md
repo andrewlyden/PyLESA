@@ -30,16 +30,40 @@ python -m pip install -r requirements.txt
 
 6. Using a terminal (e.g. PowerShell) within the clone of the `PyLESA` git repo, run:
 
-```python
-source venv/bin/activate
-python -m pylesa --help # to display help messages
-python -m pylesa ./inputs/{name of Excel input file}.xlsx my/existing/output/directory --overwrite
-```
+    ```python
+    source venv/bin/activate
+    python -m pylesa --help # to display help messages
+    python -m pylesa ./inputs/{name of Excel input file}.xlsx my/existing/output/directory --overwrite
+    ```
+    Running `python -m pylesa --help` will display the following help message:
+    ![pylesa usage](./img/pylesa_usage.png)
 
-Running `python -m pylesa --help` will display the following help message:
-![pylesa usage](./img/pylesa_usage.png)
+    Note that PyLESA defaults to using 2 compute cores: 1 to run the solver, 1 to generate matplotlib
+    figures and write them to disc. Using the `--singlecore` command-line option will force PyLESA
+    to run on a single core which will increase the overall runtime.
 
-7. After the run is complete, open the outpus folder in your chosen run directory to view the KPI 3D plots and/or operational graphs, as well as .csv outputs. (Note an error will be raised if only one simulation combination is run, as 3D plots cannot be processed). There are also raw outputs.pkl files for each simulation combination which contains a vast range of raw outputs.
+7. After the run is complete, open the outpus folder in your chosen run directory to view the KPI 3D plots and/or operational graphs, as well as .csv outputs (note that an error will be raised if only one simulation combination is run, as 3D plots cannot be processed). There are also raw outputs.pkl files for each simulation combination which contains a vast range of raw outputs.
+
+    Information about the run is written to a `pylesa.log` file located in the output folder. This
+    file contains details of run progress and any warning or error messages that may have occurred. E.g.:
+
+    ```python
+    2024-06-10 09:13:35,749: INFO: Reading MS Excel file: performance_test.xlsx
+    2024-06-10 09:13:41,651: INFO: Completed reading MS Excel file: performance_test.xlsx
+    2024-06-10 09:13:41,693: INFO: Input complete. Time taken: 6 seconds
+    2024-06-10 09:13:41,693: INFO: Running 4 combinations of heat pump power / storage size
+    2024-06-10 09:13:55,635: INFO: Ran fixed order controller: hp_1000_ts_500000. Time taken: 14 seconds
+    2024-06-10 09:14:01,983: INFO: Written output files for: hp_1000_ts_500000. Time taken: 6 seconds
+    2024-06-10 09:14:09,506: INFO: Ran fixed order controller: hp_1000_ts_1000000. Time taken: 14 seconds
+    2024-06-10 09:14:16,391: INFO: Written output files for: hp_1000_ts_1000000. Time taken: 7 seconds
+    2024-06-10 09:14:24,403: INFO: Ran fixed order controller: hp_2000_ts_500000. Time taken: 15 seconds
+    2024-06-10 09:14:31,716: INFO: Written output files for: hp_2000_ts_500000. Time taken: 7 seconds
+    2024-06-10 09:14:39,682: INFO: Ran fixed order controller: hp_2000_ts_1000000. Time taken: 15 seconds
+    2024-06-10 09:14:45,924: INFO: Written output files for: hp_2000_ts_1000000. Time taken: 6 seconds
+    2024-06-10 09:14:48,969: INFO: Wrote KPIs. Time taken: 3 seconds
+    2024-06-10 09:14:48,969: INFO: Simulations and outputs complete. Time taken: 1.12 minutes
+    2024-06-10 09:14:48,969: INFO: Run complete. Time taken: 1.22 minutes
+    ```
 
 A video discussing how to run `PyLESA` is available here: https://youtu.be/QsJut9ftCT4
 

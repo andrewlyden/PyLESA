@@ -21,7 +21,7 @@ def run_solver(controller: str, subname:  str, outdir: Path, first_hour: int, ti
         fixed_order.FixedOrder(
             outdir, subname).run_timesteps(
                 first_hour, timesteps)
-        LOG.info(f'Ran fixed order controller: {subname}. Time take: {int(round(time.time() - then, 0))} seconds')
+        LOG.info(f'Ran fixed order controller: {subname}. Time taken: {int(round(time.time() - then, 0))} seconds')
 
     elif controller == 'Model predictive control':
         myScheduler = mpc.Scheduler(
@@ -30,7 +30,7 @@ def run_solver(controller: str, subname:  str, outdir: Path, first_hour: int, ti
             first_hour, timesteps)
         myScheduler.moving_horizon(
             pre_calc, first_hour, timesteps)
-        LOG.info(f'Ran predictive controller: {subname}. Time take: {int(round(time.time() - then, 0))} seconds')
+        LOG.info(f'Ran predictive controller: {subname}. Time taken: {int(round(time.time() - then, 0))} seconds')
 
     else:
         msg = f'Invalid controller chosen: {controller}'
@@ -45,12 +45,12 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
     of matplotlib files takes roughly the same amount of time as the Fixed Order
     solver takes, so there is a significant performance benefit to running
     multiple cores. Multithreading is not an option since the artist functions
-    in matplotlib are not necessarily thread safe.
+    in matplotlib are not necessarily thread safe.\n\n
 
-    Args:
+    Args:\n
         xlsxpath: path to Excel input file\n
         outdir: path to output directory, a sub-directory matching the Excel filename will be created\n
-        overwrite: bool flag to overwrite existing output, default: False
+        overwrite: bool flag to overwrite existing output, default: False\n
         singlecore: bool flag to run on a single core rather than two cores, default: False (uses two cores)
     """
     xlsxpath = valid_fpath(xlsxpath)
@@ -100,6 +100,7 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
     first_hour = controller_info['first_hour']
 
     if singlecore:
+        LOG.info("Running pylesa using a single compute core.")
         # Single core
         for i in tqdm(range(num_combos), desc="Jobs"):
             # combo to be run
@@ -108,6 +109,7 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
             # Run output
             outputs.run_plots(outdir, subname)
     else:
+        LOG.info("Running pylesa using 2 compute cores.")
         # Run two processes:
         # - main process runs the solver
         # - second process runs the output (to produce matplotlib figures)
@@ -138,7 +140,7 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
     outputs.run_KPIs(outdir)
     ty = time.time()
     tot_time = (ty - tx)
-    LOG.info(f'Wrote KPIs. Time take: {int(round(tot_time, 0))} seconds')
+    LOG.info(f'Wrote KPIs. Time taken: {int(round(tot_time, 0))} seconds')
 
     t2 = time.time()
     tot_time = (t2 - t1) / 60
