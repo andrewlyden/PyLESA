@@ -19,12 +19,13 @@ class OutputProcess:
         self._log_queue = Queue()
         self._process = None
         # Create queue listener to forward messages to existing handlers
-        self._logger = logging.handlers.QueueListener(self._log_queue, *logging.getLogger().handlers)
+        self._logger = logging.handlers.QueueListener(self._log_queue, *logging.getLogger().handlers, respect_handler_level=True)
 
     @staticmethod
     def _run_job(func: Callable, job_queue: Queue, log_queue: Queue):
         # setup logging to pass messages back to main process
-        setup_mp_logging(logging.getLogger().level, log_queue)
+        root_logger = logging.getLogger().root
+        setup_mp_logging(root_logger.level, log_queue)
         # Run job loop
         try:
             while True:

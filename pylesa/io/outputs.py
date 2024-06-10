@@ -7,6 +7,7 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib
 import matplotlib.pyplot as plt
+import time
 from tqdm import tqdm
 from typing import Dict
 
@@ -55,6 +56,7 @@ FIG_DPI = 200
 
 
 def run_plots(root: str | Path, subname: str):
+    then = time.time()
     root = Path(root).resolve()
     myInputs = inputs.Inputs(root, subname)
     # controller inputs
@@ -87,6 +89,7 @@ def run_plots(root: str | Path, subname: str):
 
     for job in jobs:
         job()
+    LOG.info(f"Written output files for: {subname}. Time taken: {int(round(time.time() - then,0))} seconds")
 
 def run_KPIs(root: str | Path):
     root = Path(root).resolve()

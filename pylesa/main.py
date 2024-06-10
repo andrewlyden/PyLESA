@@ -5,8 +5,10 @@ import time
 from tqdm import tqdm
 
 from . import parametric_analysis
+from .constants import DEFAULT_LOGLEVEL
 from .controllers import fixed_order
 from .controllers import mpc
+from .logging import setup_logging
 from .io import inputs, outputs, read_excel
 from .io.paths import valid_dir, valid_fpath
 from .mp.process import OutputProcess
@@ -14,25 +16,24 @@ from .mp.process import OutputProcess
 LOG = logging.getLogger(__name__)
 
 def run_solver(controller: str, subname:  str, outdir: Path, first_hour: int, timesteps: int):
+    then = time.time()
     if controller == 'Fixed order control':
-        # run fixed order controller
-        LOG.info(f'Running fixed order controller: {subname}')
         fixed_order.FixedOrder(
             outdir, subname).run_timesteps(
                 first_hour, timesteps)
+        LOG.info(f'Ran fixed order controller: {subname}. Time take: {int(round(time.time() - then, 0))} seconds')
 
     elif controller == 'Model predictive control':
-        # run mpc controller
-        LOG.info('Running model predictive controller...')
         myScheduler = mpc.Scheduler(
             outdir, subname)
         pre_calc = myScheduler.pre_calculation(
             first_hour, timesteps)
         myScheduler.moving_horizon(
             pre_calc, first_hour, timesteps)
+        LOG.info(f'Ran predictive controller: {subname}. Time take: {int(round(time.time() - then, 0))} seconds')
 
     else:
-        msg = f'Unsuitable controller chosen: {controller}'
+        msg = f'Invalid controller chosen: {controller}'
         LOG.error(msg)
         raise ValueError(msg)
 
@@ -68,13 +69,15 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
             raise FileExistsError(msg)
     outdir.mkdir()
 
+    # Setup logging to console / file
+    setup_logging(outdir, DEFAULT_LOGLEVEL)
+
     t0 = time.time()
 
     # generate pickle inputs from excel sheet
     read_excel.read_inputs(xlsxpath, outdir)
 
     # generate pickle inputs for parametric analysis
-    LOG.info('Generating inputs for all simuation combinations...')
     myPara = parametric_analysis.Para(outdir)
     myPara.create_pickles()
     combinations = myPara.folder_name
@@ -83,7 +86,8 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
     t1 = time.time()
     tot_time = (t1 - t0)
 
-    LOG.info(f'Input complete. Time taken: {round(tot_time, 2)} seconds.')
+    LOG.info(f'Input complete. Time taken: {int(round(tot_time, 0))} seconds')
+    LOG.info(f"Running {num_combos} combinations of heat pump power / storage size")
 
     # just take first subname as controller is same in all
     subname = myPara.folder_name[0]
@@ -134,7 +138,7 @@ def main(xlsxpath: str, outdir: str, overwrite: bool = False, singlecore: bool =
     outputs.run_KPIs(outdir)
     ty = time.time()
     tot_time = (ty - tx)
-    LOG.info(f'Time taken for running KPIs: {round(tot_time, 2)} seconds')
+    LOG.info(f'Wrote KPIs. Time take: {int(round(tot_time, 0))} seconds')
 
     t2 = time.time()
     tot_time = (t2 - t1) / 60
