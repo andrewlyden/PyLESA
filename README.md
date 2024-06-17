@@ -16,7 +16,9 @@ This tool was developed as part of a PhD, "Modelling and Design of Local Energy 
 git clone git@github.com:andrewlyden/PyLESA.git
 ```
 
-3. Install the `PyLESA` python virtual environment. If using Linux:
+3. Install the `PyLESA` python virtual environment.
+
+If using Linux:
 ```
 python3.10 -m venv venv
 source venv/bin/activate
@@ -38,8 +40,18 @@ python -m pip install -r requirements.txt
 
 6. Using a terminal (e.g. PowerShell) within the clone of the `PyLESA` git repo, run:
 
+If using Linux:
+
 ```python
 source venv/bin/activate
+python -m pylesa --help # to display help messages
+python -m pylesa ./inputs/{name of Excel input file}.xlsx my/existing/output/directory --overwrite
+```
+
+If using Windows and Powershell:
+
+```python
+.\venv\Scripts\activate.ps1
 python -m pylesa --help # to display help messages
 python -m pylesa ./inputs/{name of Excel input file}.xlsx my/existing/output/directory --overwrite
 ```
@@ -54,8 +66,19 @@ A video discussing how to run `PyLESA` is available here: https://youtu.be/QsJut
 ## Testing
 The `PyLESA` source code is tested using [pytest](https://docs.pytest.org/en/8.2.x/). The tests can be run locally by running the following command:
 
+If using Linux:
+
 ```python
 source venv/bin/activate
+python -m pytest -svv
+# for test coverage reporting run:
+python -m pytest --cov=pylesa -svv --cov-report term-missing
+```
+
+If using Windows and Powershell:
+
+```python
+.\venv\Scripts\activate.ps1
 python -m pytest -svv
 # for test coverage reporting run:
 python -m pytest --cov=pylesa -svv --cov-report term-missing
