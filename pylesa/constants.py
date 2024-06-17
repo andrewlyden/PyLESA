@@ -7,3 +7,4 @@ LOG_PATH = "pylesa.log"
 
 INDIR = "inputs"
 OUTDIR = "outputs"
+ANNUAL_HOURS = 8760

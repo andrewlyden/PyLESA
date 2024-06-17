@@ -3,6 +3,8 @@
 simplifies initialising all the models for use
 in the control scripts
 """
+import logging
+import pandas as pd
 from pathlib import Path
 from typing import Dict
 
@@ -10,7 +12,9 @@ from .io import inputs
 from .power import grid, renewables
 from .storage import hot_water_tank, electrical_storage
 from .heat import heatpump, auxiliary
+from .heat.enums import ModelName
 
+LOG = logging.getLogger(__name__)
 
 def init(root: Path, subname: str) -> Dict[str, object]:
     """Initialise pylesa classes for use in controllers
@@ -73,81 +77,50 @@ def init(root: Path, subname: str) -> Dict[str, object]:
         ts_inputs['correction_factors'],
         air_temperature=input_weather)
 
+    # Setup heat pump class
     inputs_basics = myInputs.heatpump_basics()
-    modelling_approach = inputs_basics['modelling_approach']
+    inputs_demands = myInputs.demands()
+    inputs_simple = None
+    inputs_lorentz = None
+    inputs_standard = None
 
-    if modelling_approach == 'Simple':
+    match inputs_basics['modelling_approach']:
+        case ModelName.SIMPLE:
+            inputs_simple = myInputs.heatpump_simple()
+        case ModelName.LORENTZ:
+            inputs_lorentz = myInputs.heatpump_lorentz()
+        case ModelName.STANDARD:
+            inputs_standard = myInputs.heatpump_standard_regression()
+        case _:
+            msg = f"Performance modelling {inputs_basics['modelling_approach']} is not valid"
+            LOG.error(msg)
+            raise KeyError(msg)
+    
+    _ambient_temp = pd.concat(
+        [
+            input_weather['air_temperature'],
+            input_weather['water_temperature']
+        ],
+        axis=1
+    )
 
-        inputs_simple = myInputs.heatpump_simple()
-        inputs_demands = myInputs.demands()
-
-        myHeatPump = heatpump.HeatPump(
-            inputs_basics['heat_pump_type'],
-            inputs_basics['modelling_approach'],
-            inputs_basics['capacity'],
-            inputs_basics['ambient_delta_t'],
-            inputs_basics['minimum_runtime'],
-            inputs_basics['minimum_output'],
-            inputs_basics['data_input'],
-            inputs_demands['source_temp'],
-            inputs_demands['return_temp_DH'],
-            input_weather,
-            simple_cop=inputs_simple)
-
-    if modelling_approach == 'Lorentz':
-
-        inputs_lorentz = myInputs.heatpump_lorentz()
-        inputs_demands = myInputs.demands()
-
-        myHeatPump = heatpump.HeatPump(
-            inputs_basics['heat_pump_type'],
-            inputs_basics['modelling_approach'],
-            inputs_basics['capacity'],
-            inputs_basics['ambient_delta_t'],
-            inputs_basics['minimum_runtime'],
-            inputs_basics['minimum_output'],
-            inputs_basics['data_input'],
-            inputs_demands['source_temp'],
-            inputs_demands['return_temp_DH'],
-            input_weather,
-            lorentz_inputs=inputs_lorentz)
-
-    elif modelling_approach == 'Generic regression':
-
-        inputs_demands = myInputs.demands()
-
-        myHeatPump = heatpump.HeatPump(
-            inputs_basics['heat_pump_type'],
-            inputs_basics['modelling_approach'],
-            inputs_basics['capacity'],
-            inputs_basics['ambient_delta_t'],
-            inputs_basics['minimum_runtime'],
-            inputs_basics['minimum_output'],
-            inputs_basics['data_input'],
-            inputs_demands['source_temp'],
-            inputs_demands['return_temp_DH'],
-            input_weather)
-
-    elif modelling_approach == 'Standard test regression':
-
-        inputs_standard_regression = myInputs.heatpump_standard_regression()
-        inputs_demands = myInputs.demands()
-
-        myHeatPump = heatpump.HeatPump(
-            inputs_basics['heat_pump_type'],
-            inputs_basics['modelling_approach'],
-            inputs_basics['capacity'],
-            inputs_basics['ambient_delta_t'],
-            inputs_basics['minimum_runtime'],
-            inputs_basics['minimum_output'],
-            inputs_basics['data_input'],
-            inputs_demands['source_temp'],
-            inputs_demands['return_temp_DH'],
-            input_weather,
-            standard_test_regression_inputs=inputs_standard_regression)
+    myHeatPump = heatpump.HeatPump(
+        inputs_basics['heat_pump_type'],
+        inputs_basics['modelling_approach'],
+        inputs_basics['capacity'],
+        inputs_basics['ambient_delta_t'],
+        inputs_basics['minimum_runtime'],
+        inputs_basics['minimum_output'],
+        inputs_basics['data_input'],
+        inputs_demands['source_temp'],
+        inputs_demands['return_temp_DH'],
+        _ambient_temp,
+        simple_cop=inputs_simple,
+        lorentz_inputs=inputs_lorentz,
+        standard_inputs=inputs_standard
+    )
 
     i = myInputs.electrical_storage()
-
     myElectricalStorage = electrical_storage.ElectricalStorage(
         i['capacity'],
         i['initial_state'],

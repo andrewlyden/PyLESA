@@ -12,6 +12,8 @@ import pickle
 from .. import initialise_classes, tools
 from ..io import inputs
 from ..constants import OUTDIR
+from ..heat.models import PerformanceArray
+from ..heat.enums import Fuel
 
 LOG = logging.getLogger(__name__)
 
@@ -98,66 +100,6 @@ class Scheduler(object):
         deficit = elec_match['deficit']
         # RES_used_demand = elec_match['RES_used']
 
-        # temp parameters
-        # rt = self.return_temp
-        # st = self.source_temp
-        # ft = self.flow_temp
-
-        # heat_pump_renewable_demand = np.zeros(total_timesteps)
-        # heat_pump_renewable_usage = np.zeros(total_timesteps)
-        # _RES_used = np.zeros(total_timesteps)
-        # hp_left = np.zeros(total_timesteps)
-        # max_capacity = np.zeros(total_timesteps)
-
-        # final_hour = first_hour + total_timesteps
-        # if final_hour >= 8759 - horizon:
-        #     final_hour = 8759
-
-        # for timestep in range(first_hour, final_hour):
-
-        #         t = timestep - first_hour
-        #         # USE HEAT PUMP WITH SURPLUS TO MEET HEAT DEMAND
-        #         # hpr - heat pump renewable
-        #         hpr = self.myHeatPump.thermal_output(
-        #             surplus[timestep], hp_performance[timestep],
-        #             self.heat_demand[timestep])
-        #         # thermal output from heat pump running on renewables
-        #         heat_pump_renewable_demand[t] = hpr['hp_demand']
-        #         # electrical usage of RES by heat pump running on renewables
-        #         heat_pump_renewable_usage[t] = hpr['hp_elec']
-        #         _RES_used[t] = (
-        #             surplus[timestep] - heat_pump_renewable_usage[t])
-        #         # STILL RES SURPLUS?
-
-        #         # calculates the RES used so far
-        #         # only the heat pump so far
-        #         RES_used1 = heat_pump_renewable_usage[t]
-        #         # checks if there is a surplus
-        #         surplus_check = myCheck.surplus_check(
-        #             surplus[timestep], RES_used1)
-        #         # if there is surplus
-        #         if surplus_check is True:
-        #             # CHARGE THERMAL STORAGE WITH HEAT PUMP DRIVEN BY SURPLUS
-
-        #             # calculate the RES leftover
-        #             RES_left1 = surplus[timestep] - RES_used1
-        #             duty = hp_performance[timestep]['duty']
-        #             # capacity of heat pump leftover
-        #             hp_cap_left = duty - heat_pump_renewable_demand[t]
-        #             # max heat from heat pump running surplus
-        #             hp_max_RES = hp_performance[timestep]['cop'] * RES_left1
-        #             hp_left[t] = min(hp_cap_left, hp_max_RES)
-        #             if self.myHeatPump.capacity == 0:
-        #                 hp_left[t] = 0
-
-        #         return_temp_nodes = []
-        #         for n in range(self.myHotWaterTank.number_nodes):
-        #             return_temp_nodes.append(rt)
-        #         # charging from return temp to source temp is max capacity
-        #         max_capacity[t] = self.myHotWaterTank.max_energy_in_out(
-        #             'charging', return_temp_nodes,
-        #             st[timestep], ft[timestep], rt, timestep)
-
         pre_calc = {
             'hp_performance': hp_performance,
             # 'heat_pump_renewable_demand': heat_pump_renewable_demand,
@@ -177,7 +119,7 @@ class Scheduler(object):
     def solve(self, pre_calc, hour, first_hour, final_hour, prev_result):
 
         # over the whole year
-        hp_performance = pre_calc['hp_performance']
+        hp_performance: PerformanceArray = pre_calc['hp_performance']
         surplus = pre_calc['surplus']
         deficit = pre_calc['deficit']
         match = pre_calc['match']
@@ -241,10 +183,10 @@ class Scheduler(object):
             if self.myHeatPump == 0:
                 duty.append(0.0)
             else:
-                duty.append(hp_performance[i]['duty'])
-            cop.append(hp_performance[i]['cop'])
+                duty.append(hp_performance[i].duty)
+            cop.append(hp_performance[i].cop)
             HP_min.append(
-                hp_performance[i]['duty'] *
+                hp_performance[i].duty *
                 self.myHeatPump.minimum_output *
                 self.myHeatPump.minimum_runtime / 60 /
                 100.0)
@@ -313,7 +255,7 @@ class Scheduler(object):
         # aux_cap = 1000
         aux = m.Var(value=prev_result['aux'], lb=0)
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_cost = m.Param(
                 value=list(self.import_cost[hour:final_hour]))
         else:
@@ -322,7 +264,7 @@ class Scheduler(object):
         # equations
 
         # different for electric since it can use RES production
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             # equalities
             m.Equations(
                 [soc_ES.dt() == ESc * charge_eff - ESd - loss_ES,
@@ -436,7 +378,7 @@ class Scheduler(object):
         if self.myHotWaterTank.capacity == 0:
             final_nodes_temp = prev_result['final_nodes_temp']
         else:
-            if self.myAux.fuel == 'Electric':
+            if self.myAux.fuel == Fuel.ELECTRIC:
                 # thermal_output = HPt[h] + aux[h]
                 next_nodes_temp = self.myHotWaterTank.new_nodes_temp(
                     state, prev_result['final_nodes_temp'], st[h], sdt, ft[h],
@@ -463,14 +405,14 @@ class Scheduler(object):
         results['RES']['elec_demand'] = RES_ed[h]
         results['RES']['HP'] = (
             (HPtrd[h] + HPtrs[h]) /
-            hp_performance[timestep]['cop'])
-        if self.myAux.fuel == 'Electric':
+            hp_performance[timestep].cop)
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['RES']['aux'] = aux_rd[h] + aux_rs[h]
         results['RES']['export'] = export[h]
 
         # heat pump results
-        results['HP']['cop'] = hp_performance[timestep]['cop']
-        results['HP']['duty'] = hp_performance[timestep]['duty']
+        results['HP']['cop'] = hp_performance[timestep].cop
+        results['HP']['duty'] = hp_performance[timestep].duty
         results['HP']['heat_total_output'] = HPt[h]
         results['HP']['heat_from_ES_to_demand'] = HPtesd[h]
         results['HP']['heat_to_heat_demand'] = min(
@@ -536,7 +478,7 @@ class Scheduler(object):
         results['aux']['demand'] = aux[h]
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price'] / 1000.
             density = 0.0
         else:
@@ -553,7 +495,7 @@ class Scheduler(object):
         results['grid']['import_for_ES'] = (
             results['ES']['charging_from_import'])
         results['grid']['total_export'] = results['RES']['export']
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +
@@ -599,28 +541,6 @@ class Scheduler(object):
             'ESd_aux': ESd_aux[h],
             'imp_ed': imp_ed[h], 'RES_ed': RES_ed[h]}
 
-        # Plot solution
-        # plt.figure()
-        # plt.subplot(4, 1, 1)
-        # plt.plot(m.time, HPt.value, 'r', linewidth=2)
-        # plt.plot(m.time, aux.value, 'y', linewidth=2)
-        # plt.plot(m.time, hd.value, 'g', linewidth=2)
-        # plt.ylabel(['HPt', 'aux', 'HD'])
-        # plt.legend(['HPt', 'aux', 'HD'], loc='best')
-        # plt.subplot(4, 1, 2)
-        # plt.plot(m.time, soc.value, 'b', linewidth=2)
-        # plt.legend(['SOC'], loc='best')
-        # plt.ylabel('SOC')
-        # plt.subplot(4, 1, 3)
-        # plt.plot(m.time, IC.value, 'g', linewidth=2)
-        # plt.legend(['Import cost'], loc='best')
-        # plt.ylabel('Import cost')
-        # plt.subplot(4, 1, 4)
-        # plt.plot(m.time, surplus.value, 'm', linewidth=2)
-        # plt.legend([r'surplus'], loc='best')
-        # plt.ylabel('Surplus')
-        # plt.xlabel('Time')
-        # plt.show()
         return {'results': results, 'next_results': next_results}
 
     def moving_horizon(self, pre_calc, first_hour, timesteps):
@@ -651,7 +571,7 @@ class Scheduler(object):
 
                 # if very first result then previous results are zero
                 hp_performance = pre_calc['hp_performance']
-                duty = hp_performance[first_hour]['duty']
+                duty = hp_performance[first_hour].duty
                 # max_charge = pre_calc['max_capacity'][0]
                 hd = self.heat_demand[first_hour]
                 if duty >= hd:
@@ -699,8 +619,8 @@ class Scheduler(object):
                 res['grid']['import_price'] = self.import_cost[first_hour]
                 res['heat_demand']['heat_demand'] = (
                     self.heat_demand[first_hour])
-                res['HP']['cop'] = hp_performance[first_hour]['cop']
-                res['HP']['duty'] = hp_performance[first_hour]['duty']
+                res['HP']['cop'] = hp_performance[first_hour].cop
+                res['HP']['duty'] = hp_performance[first_hour].duty
                 results.append(res)
                 next_results.append(prev_result)
 
@@ -753,84 +673,6 @@ class Scheduler(object):
             pbar.update(hour - first_hour + 1)
         # stop progress bar
         pbar.finish()
-
-        # HPt = []
-        # aux = []
-        # final_nodes_temp = []
-        # TSc = []
-        # TSd = []
-        # state = []
-        # IC = []
-        # for i in range(timesteps):
-        #     HPt.append(results[i]['HPt'])
-        #     aux.append(results[i]['aux'])
-        #     final_nodes_temp.append(results[i]['final_nodes_temp'])
-        #     TSc.append(results[i]['TSc'])
-        #     TSd.append(results[i]['TSd'])
-        #     IC.append(results[i]['import_cost'])
-        #     if results[i]['state'] == 'charging':
-        #         state.append(1)
-        #     elif results[i]['state'] == 'discharging':
-        #         state.append(-1)
-        #     else:
-        #         state.append(0)
-
-        # surplus = pre_calc['surplus']
-        # hd = self.heat_demand[first_hour:final_hour]
-
-        # HPt = []
-        # cop = []
-        # aux = []
-        # final_nodes_temp = []
-        # TSc = []
-        # TSd = []
-        # IC = []
-        # surplus = []
-        # hd = []
-        # export = []
-        # for i in range(timesteps):
-        #     HPt.append(results[i]['HP']['heat_total_output'])
-        #     cop.append(results[i]['HP']['cop'])
-        #     aux.append(results[i]['aux']['demand'])
-        #     final_nodes_temp.append(results[i]['TS']['final_nodes_temp'])
-        #     TSc.append(results[i]['TS']['charging_total'])
-        #     TSd.append(results[i]['TS']['discharging_total'])
-        #     IC.append(results[i]['grid']['import_price'])
-        #     surplus.append(results[i]['grid']['surplus'])
-        #     hd.append(results[i]['heat_demand']['heat_demand'])
-        #     export.append(results[i]['grid']['total_export'])
-
-        # # # Plot solution
-        # time = range(first_hour, final_hour)
-        # plt.figure()
-        # plt.subplot(4, 1, 1)
-        # plt.plot(time, HPt, 'r', linewidth=2)
-        # plt.plot(time, aux, 'y', linewidth=2)
-        # plt.plot(time, hd, 'g', linewidth=2)
-        # plt.ylabel('HPt, aux and HD')
-        # plt.legend(['HPt', 'aux', 'HD'], loc='best')
-        # plt.subplot(4, 1, 2)
-        # plt.plot(time, final_nodes_temp, 'b', linewidth=2)
-        # plt.legend(['Node temperature'], loc='best')
-        # plt.ylabel('Node temperature')
-        # plt.subplot(4, 1, 3)
-        # plt.plot(time, IC, 'g', linewidth=2)
-        # plt.legend(['Import cost'], loc='best')
-        # plt.ylabel('Import cost')
-        # plt.subplot(4, 1, 4)
-        # # plt.plot(time, cop, 'm', linewidth=2)
-        # # plt.legend(['cop'], loc='best')
-        # # plt.ylabel('cop')
-        # plt.plot(time, surplus, 'm', linewidth=2)
-        # plt.plot(time, export, 'b', linewidth=2)
-        # plt.legend(['surplus', 'export'], loc='best')
-        # plt.ylabel('Surplus, and export')
-        # # plt.plot(time, TSc, 'r', linewidth=2)
-        # # plt.plot(time, TSd, 'g', linewidth=2)
-        # # plt.legend(['TSc', 'TSd'], loc='best')
-        # # plt.ylabel('Charging/discharging')
-        # plt.xlabel('Time')
-        # plt.show()
 
         # write the outputs to a pickle
         file = self.root / OUTDIR / self.subname / 'outputs.pkl'

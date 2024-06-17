@@ -1,3 +1,5 @@
+![Test status](https://github.com/thisistheplace/PyLESA/actions/workflows/test.yml/badge.svg?event=push)
+
 # `PyLESA`
 `PyLESA` stands for Python for Local Energy Systems Analysis and is pronounced "pai-lee-suh".
 
@@ -40,6 +42,16 @@ Running `python -m pylesa --help` will display the following help message:
 7. After the run is complete, open the outpus folder in your chosen run directory to view the KPI 3D plots and/or operational graphs, as well as .csv outputs. (Note an error will be raised if only one simulation combination is run, as 3D plots cannot be processed). There are also raw outputs.pkl files for each simulation combination which contains a vast range of raw outputs.
 
 A video discussing how to run `PyLESA` is available here: https://youtu.be/QsJut9ftCT4
+
+## Testing
+The `PyLESA` source code is tested using [pytest](https://docs.pytest.org/en/8.2.x/). The tests can be run locally by running the following command:
+
+```python
+source venv/bin/activate
+python -m pytest -svv
+# for test coverage reporting run:
+python -m pytest --cov=pylesa -svv --cov-report term-missing
+```
 
 ## References
 

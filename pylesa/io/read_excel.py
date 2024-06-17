@@ -10,6 +10,7 @@ import pandas as pd
 
 from .paths import valid_fpath
 from ..constants import INDIR, OUTDIR
+from ..heat.enums import Fuel
 
 LOG = logging.getLogger(__name__)
 
@@ -418,20 +419,22 @@ class XlsxInput(object):
 
         df = self.excel_sheets['Aux heat']
 
-        fuel = df['Unnamed: 2'][4]
+        # Store fuel as Enum
+        fuel = Fuel.from_value(df['Unnamed: 2'][4].upper())
         efficiency = df['Unnamed: 3'][4]
         data = {'fuel': fuel, 'efficiency': efficiency}
         self.container['aux_heat'] = data
 
         # fuel then energy density and cost
+        # Store fuel_info against Enum keys
         fuel_info = {
-            df['Unnamed: 2'][7]: {
+            Fuel.from_value(df['Unnamed: 2'][7].upper()): {
                 'energy_density': df['Unnamed: 3'][7],
                 'cost': df['Unnamed: 4'][7]},
-            df['Unnamed: 2'][8]: {
+            Fuel.from_value(df['Unnamed: 2'][8].upper()): {
                 'energy_density': df['Unnamed: 3'][8],
                 'cost': df['Unnamed: 4'][8]},
-            df['Unnamed: 2'][9]: {
+            Fuel.from_value(df['Unnamed: 2'][9].upper()): {
                 'energy_density': df['Unnamed: 3'][9],
                 'cost': df['Unnamed: 4'][9]}}
         self.container['fuel_info'] = fuel_info

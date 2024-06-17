@@ -5,12 +5,14 @@ import numpy as np
 import shutil
 import pickle
 # import register_matplotlib_converters
+import matplotlib
 import matplotlib.pyplot as plt
 from typing import Dict
 
 from . import inputs
 from .. import tools as t
 from ..constants import INDIR, OUTDIR
+from ..heat.enums import Fuel
 from ..power import grid
 
 LOG = logging.getLogger(__name__)
@@ -42,8 +44,13 @@ plt.style.available
 """
 # register_matplotlib_converters()
 # plt.style.use('seaborn-paper')
-plt.style.use('ggplot')
+
+# Use non interactive backend to avoid windows popping up
+matplotlib.use('Agg')
+plt.style.use(['ggplot', 'fast'])
 plt.rcParams.update({'font.size': 6})
+
+FIG_DPI = 200
 
 
 def run_plots(root: str | Path, subname: str):
@@ -180,7 +187,7 @@ class Plot(object):
 
         # Plot solution
         time = range(timesteps)
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(4, 1, 1)
         plt.title('Operation graphs')
@@ -207,8 +214,8 @@ class Plot(object):
 
         plt.xlabel('Hour of the year')
         plt.tight_layout()
-
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def elec_demand_and_RES(self):
@@ -252,7 +259,7 @@ class Plot(object):
 
         # Plot solution
         time = range(first_hour, final_hour)
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(3, 1, 1)
         plt.stackplot(
@@ -289,7 +296,7 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def HP_and_heat_demand(self):
@@ -353,7 +360,7 @@ class Plot(object):
 
         # Plot solution
         time = range(first_hour, final_hour)
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(3, 1, 1)
         plt.stackplot(
@@ -388,10 +395,10 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(2, 1, 1)
         plt.plot(time, cop[first_hour:final_hour], 'r', linewidth=1)
@@ -406,7 +413,7 @@ class Plot(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'heatpump_cop_and_duty.png'
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def TS(self):
@@ -435,7 +442,7 @@ class Plot(object):
 
         # Plot solution
         time = range(first_hour, final_hour)
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(3, 1, 1)
         plt.plot(
@@ -469,7 +476,7 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def ES(self):
@@ -509,7 +516,7 @@ class Plot(object):
 
         # Plot solution
         time = range(first_hour, final_hour)
-        plt.figure()
+        fig = plt.figure()
         plt.subplot(4, 1, 1)
         plt.title('Electrical Storage')
         plt.plot(time, ES_to_demand[first_hour:final_hour], 'r', linewidth=1)
@@ -538,7 +545,7 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def grid(self):
@@ -569,7 +576,7 @@ class Plot(object):
 
         # Plot solution
         time = range(first_hour, final_hour)
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(3, 1, 1)
         plt.title('Grid interaction')
@@ -590,7 +597,7 @@ class Plot(object):
         plt.xlabel('Hour of the year')
         plt.tight_layout()
 
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
     def RES_bar(self):
@@ -624,7 +631,7 @@ class Plot(object):
         RES_year = round(RES.sum() / 1000, 2)
 
         # bar chart of months
-        plt.figure()
+        fig = plt.figure()
 
         plt.subplot(3, 1, 1)
         plt.bar(
@@ -657,7 +664,7 @@ class Plot(object):
         plt.title('Total RES Production (MWh): %s' % (RES_year))
 
         plt.tight_layout()
-        plt.savefig(fileout, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(fileout, format='png', dpi=FIG_DPI, bbox_inches='tight')
         plt.close()
 
 
@@ -1407,7 +1414,7 @@ class Calcs(object):
         # different for electric aux/non electric aux
         # with electric aux cost included in import
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             opex = np.sum(-cashflow)
         else:
             opex = np.sum(-cashflow) + np.sum(aux_cost)
@@ -1421,7 +1428,7 @@ class Calcs(object):
 
         heat_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 heat_cost[i] = (
                     (results[i]['grid']['total_import'] -
@@ -1453,7 +1460,7 @@ class Calcs(object):
 
         heat_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 heat_cost[i] = (
                     (results[i]['grid']['total_import'] -
@@ -1493,7 +1500,7 @@ class Calcs(object):
 
         cashflow = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 cashflow[i] = (
                     (-results[i]['grid']['cashflow'] / 1000.))
@@ -1543,7 +1550,7 @@ class Calcs(object):
 
         energy_cost = np.zeros(timesteps)
 
-        if self.myInputs.aux()['fuel'] == 'Electric':
+        if self.myInputs.aux()['fuel'] == Fuel.ELECTRIC:
             for i in range(timesteps):
                 energy_cost[i] = (
                     (-results[i]['grid']['cashflow'] / 1000.))
@@ -1670,7 +1677,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'operating_cost.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_RES(self):
@@ -1706,7 +1713,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'RES_self_consumption.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_heat_from_RES(self):
@@ -1742,7 +1749,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'heat_from_RES.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_HP_size_ratio(self):
@@ -1778,7 +1785,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'HP_size_ratio.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_HP_utilisation(self):
@@ -1815,7 +1822,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'HP_utilisation.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_capital_cost(self):
@@ -1851,7 +1858,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'capital_cost.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_COH(self):
@@ -1888,7 +1895,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'cost_of_heat.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def plot_LCOH(self):
@@ -1925,7 +1932,7 @@ class ThreeDPlots(object):
         plt.tight_layout()
 
         fileout = self.folder_path / 'levelised_cost_of_heat.png'
-        plt.savefig(fileout, format='png', dpi=300)
+        fig.savefig(fileout, format='png', dpi=FIG_DPI)
         plt.close()
 
     def KPIs_to_csv(self):

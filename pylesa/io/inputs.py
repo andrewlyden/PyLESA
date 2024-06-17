@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..constants import INDIR
+from ..heat.enums import HP, ModelName, DataInput
 
 LOG = logging.getLogger(__name__)
 
@@ -178,12 +179,32 @@ class Inputs(object):
         hp = self.container['hp_basics']
 
         # the inputs which specify the heat pump to be modelled
-        hp_type = hp['heat_pump_type'][0]
+        _heat_pump_type = hp['heat_pump_type'][0].upper()
+        if _heat_pump_type not in HP:
+            msg = f"Heat pump type {_heat_pump_type} is not one of {[_.value for _ in HP]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        hp_type = HP.from_value(_heat_pump_type)
+
         capacity = hp['capacity'][0]
-        modelling_approach = hp['modelling_approach'][0]
+
+        _modelling_approach = hp['modelling_approach'][0].upper()
+        if _modelling_approach not in ModelName:
+            msg = f"Heat pump modelling approach {_modelling_approach} is not one of {[_.value for _ in ModelName]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        modelling_approach = ModelName.from_value(_modelling_approach)
+
         ambient_delta_t = hp['ambient_delta_t'][0]
         minimum_runtime = hp['minimum_runtime'][0]
-        data_input = hp['data_input'][0]
+
+        _data_input = hp['data_input'][0].upper()
+        if _data_input not in DataInput:
+            msg = f"Data input type {_data_input} is not one of {[_.value for _ in DataInput]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        data_input = DataInput.from_value(_data_input)
+
         minimum_output = hp['minimum_output'][0]
 
         inputs = {'heat_pump_type': hp_type,

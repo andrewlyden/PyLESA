@@ -4,78 +4,60 @@ contains class for auxiliaries which covers
 back up heaters
 """
 
-from ..io import inputs
+import logging
+from typing import Any, Dict
 
+from .enums import Fuel
 
-def aux_outputs(demand):
-    """aux outputs
-
-    takes inputs from excel sheet
-    creates aux class object
-    calculates demand, fuel usage in kwh, fuel mass in kg, and cost
-
-    Arguments:
-        demand {float} -- given demand to be met by aux
-
-    Returns:
-        dict -- demand, fuel usage and cost
-    """
-
-    i = inputs.aux()
-
-    myAux = Aux(
-        i['fuel'],
-        i['efficiency'],
-        i['fuel_info'])
-
-    dem = myAux.demand_calc(demand)
-    usage = myAux.fuel_usage(demand)
-
-    outputs = {'dem': dem, 'usage': usage}
-
-    return outputs
+LOG = logging.getLogger(__name__)
 
 
 class Aux(object):
 
-    def __init__(self, fuel, efficiency, fuel_info):
-        """class instance
+    def __init__(
+        self, fuel: Fuel, efficiency: float, fuel_info: Dict[Fuel, Dict[str, float]]
+    ):
+        """Back-up heater
 
-        Arguments:
-            fuel {str} -- name of fuel used
-            efficiency {float} -- efficiency of fuel transform
+        Args:
+            fuel, name of fuel used
+            efficiency, efficiency of fuel transform
+            fuel_info, nested dictionary defining fuel cost and energy density
         """
-
+        self._fuel_info = fuel_info
         self.fuel = fuel
         self.efficiency = efficiency
-        if fuel == 'Electric':
-            pass
+
+    @property
+    def fuel(self) -> Fuel:
+        return self._fuel
+
+    @fuel.setter
+    def fuel(self, fuel: Fuel):
+        if fuel not in Fuel:
+            msg = f"Invalid fuel type: {fuel}, must be one of {[_.value for _ in Fuel]}"
+            LOG.error(msg)
+            raise ValueError(msg)
+        self._fuel = fuel
+
+        if self.fuel is Fuel.ELECTRIC:
+            self.cost = None
+            self.energy_density = None
         else:
-            self.cost = fuel_info[fuel]['cost']
-            self.energy_density = fuel_info[fuel]['energy_density']
+            if self.fuel not in self._fuel_info:
+                msg = f"Fuel info is not available for fuel type: {self.fuel}, please specify one of {list(self._fuel_info.keys())}"
+                LOG.error(msg)
+                raise KeyError(msg)
+            self.cost = self._fuel_info[self.fuel]["cost"]
+            self.energy_density = self._fuel_info[fuel]["energy_density"]
 
-    def demand_calc(self, demand):
-        """energy demand met by fuel transformer
+    def fuel_usage(self, demand: float) -> float:
+        """Fuel used (units consistent with demand)
 
-        Arguments:
-            demand {float} -- unmet demand
-
-        Returns:
-            float -- demand met by fuel transformer
-        """
-
-        return demand
-
-    def fuel_usage(self, demand):
-        """fuel used in kWh
-
-        Arguments:
-            demand {float} -- unmet demand
+        Args:
+            demand, unmet demand
 
         Returns:
-            float -- fuel used in kWh
+            float, fuel used
         """
-
-        fuel_usage = demand / self.efficiency
-
-        return fuel_usage
+        return demand / self.efficiency

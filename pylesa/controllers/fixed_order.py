@@ -18,6 +18,8 @@ from progressbar import Bar, ETA, Percentage, ProgressBar, RotatingMarker
 from .. import initialise_classes
 from ..io import inputs
 from ..constants import OUTDIR
+from ..heat.models import PerformanceValue
+from ..heat.enums import Fuel
 
 LOG = logging.getLogger(__name__)
 
@@ -164,59 +166,6 @@ class FixedOrder(object):
         # stop progress bar
         pbar.finish()
 
-        # ES_to_demand = []
-        # ES_to_HP_to_demand = []
-        # RES_to_ES = []
-        # import_for_ES = []
-        # soc = []
-
-        # # TSd = []
-        # IC = []
-        # surplus = []
-        # # hd = []
-        # export = []
-        # for i in range(timesteps):
-        #     ES_to_demand.append(-1 * results[i]['ES']['discharging_to_demand'])
-        #     ES_to_HP_to_demand.append(-1 * results[i]['ES']['discharging_to_HP'])
-        #     RES_to_ES.append(results[i]['ES']['charging_from_RES'])
-        #     import_for_ES.append(results[i]['ES']['charging_from_import'])
-        #     soc.append(results[i]['ES']['final_soc'])
-        #     # TSd.append(results[i]['TS']['discharging_total'])
-        #     IC.append(results[i]['grid']['import_price'])
-        #     surplus.append(results[i]['grid']['surplus'])
-        #     # hd.append(results[i]['heat_demand']['heat_demand'])
-        #     export.append(results[i]['grid']['total_export'])
-
-        # # Plot solution
-        # time = range(first_hour, final_hour)
-        # plt.figure()
-        # plt.subplot(4, 1, 1)
-        # plt.plot(time, ES_to_demand, 'r', linewidth=2)
-        # plt.plot(time, ES_to_HP_to_demand, 'y', linewidth=2)
-        # plt.plot(time, RES_to_ES, 'b', linewidth=2)
-        # plt.plot(time, import_for_ES, 'g', linewidth=2)
-        # plt.ylabel('ES charging/discharging')
-        # plt.legend(['ES_to_demand', 'ES_to_HP_to_demand', 'RES_to_ES', 'import_for_ES'], loc='best')
-        # plt.subplot(4, 1, 2)
-        # plt.plot(time, soc, 'r', linewidth=2)
-        # plt.legend(['SOC'], loc='best')
-        # plt.ylabel('SOC')
-        # plt.subplot(4, 1, 3)
-        # plt.plot(time, IC, 'g', linewidth=2)
-        # plt.legend(['Import cost'], loc='best')
-        # plt.ylabel('Import cost')
-        # plt.subplot(4, 1, 4)
-        # plt.plot(time, surplus, 'm', linewidth=2)
-        # plt.plot(time, export, 'b', linewidth=2)
-        # plt.legend(['surplus', 'export'], loc='best')
-        # plt.ylabel('Surplus, and export')
-        # # plt.plot(time, TSc, 'r', linewidth=2)
-        # # plt.plot(time, TSd, 'g', linewidth=2)
-        # # plt.legend(['TSc', 'TSd'], loc='best')
-        # # plt.ylabel('Charging/discharging')
-        # plt.xlabel('Time')
-        # plt.show()
-
         # write the outputs to a pickle
         file = self.root / OUTDIR / self.subname / 'outputs.pkl'
         with open(file, 'wb') as output_file:
@@ -233,8 +182,8 @@ class FixedOrder(object):
         results['grid']['deficit'] = deficit
         results['grid']['match'] = surplus - deficit
         results['grid']['import_price'] = self.import_price[timestep]
-        results['HP']['cop'] = hp_performance['cop']
-        results['HP']['duty'] = hp_performance['duty']
+        results['HP']['cop'] = hp_performance.cop
+        results['HP']['duty'] = hp_performance.duty
 
         order_above_setpoint = self.fixed_order_info['order_above_setpoint']
         key = self.process_key()['above']
@@ -305,7 +254,7 @@ class FixedOrder(object):
             results['aux']['RES_to_demand'])
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price']
             density = 0.0
         else:
@@ -362,7 +311,7 @@ class FixedOrder(object):
         results['grid']['import_for_heat_pump_total'] = (
             results['grid']['import_for_heat_pump_to_heat_demand'] +
             results['grid']['import_for_heat_pump_to_TS'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +
@@ -395,7 +344,7 @@ class FixedOrder(object):
         # IF NOT AVAILABLE CAP THEN DONT RUN HP
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
-                   100.0 * hp_performance['duty'])
+                   100.0 * hp_performance.duty)
         hp_usage = results['HP']['heat_total_output']
 
         # need to change results if threshold not met
@@ -506,8 +455,8 @@ class FixedOrder(object):
         results['grid']['match'] = surplus - deficit
         results['grid']['import_price'] = self.import_price[timestep]
         results['grid']['export_price'] = self.export_price
-        results['HP']['cop'] = hp_performance['cop']
-        results['HP']['duty'] = hp_performance['duty']
+        results['HP']['cop'] = hp_performance.cop
+        results['HP']['duty'] = hp_performance.duty
 
         order_below_setpoint = self.fixed_order_info['order_below_setpoint']
         key = self.process_key()['below']
@@ -569,7 +518,7 @@ class FixedOrder(object):
             results['heat_demand']['aux'])
         results['aux']['usage'] = self.myAux.fuel_usage(
             results['aux']['demand'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             aux_price = results['grid']['import_price']
             density = 0.0
         else:
@@ -633,7 +582,7 @@ class FixedOrder(object):
         results['grid']['import_for_heat_pump_total'] = (
             results['grid']['import_for_heat_pump_to_heat_demand'] +
             results['grid']['import_for_heat_pump_to_TS'])
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
             results['grid']['total_import'] = (
                 results['grid']['import_for_elec_demand'] +
                 results['grid']['import_for_heat_pump_total'] +
@@ -670,7 +619,7 @@ class FixedOrder(object):
         # IF NOT AVAILABLE CAP THEN DONT RUN HP
         min_out = (self.myHeatPump.minimum_output *
                    self.myHeatPump.minimum_runtime / 60 /
-                   100.0 * hp_performance['duty'])
+                   100.0 * hp_performance.duty)
         hp_usage = results['HP']['heat_total_output']
 
         # need to change results if threshold not met
@@ -1102,28 +1051,28 @@ class FixedOrder(object):
 
         return import_elec_demand
 
-    def HP_RES_to_demand(self, hp_usage, RES_left, hp_performance, heat_unmet):
+    def HP_RES_to_demand(self, hp_usage, RES_left, hp_performance: PerformanceValue, heat_unmet):
 
         # USE HEAT PUMP WITH SURPLUS TO MEET HEAT DEMAND
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # hpr - heat pump renewable
         hpr = self.myHeatPump.thermal_output(
             RES_left, hp_performance, heat_unmet)
         # thermal output from heat pump running on renewables
-        HPtrd = min(hpr['hp_demand'], heat_pump_spare)
+        HPtrd = min(hpr.demand, heat_pump_spare)
         # elec usage
         HPetd = self.myHeatPump.elec_usage(
-            HPtrd, hp_performance)['hp_elec']
+            HPtrd, hp_performance)
 
         return {'h': HPtrd, 'e': HPetd}
 
     def EAUX_RES_to_demand(self, aux_left, RES_left, heat_unmet):
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
 
             # use up surplus with electric heater if exisitng
 
@@ -1141,7 +1090,7 @@ class FixedOrder(object):
         # TO MEET HEAT DEMAND
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # min of dem unmet and spare hp capacity
@@ -1157,7 +1106,7 @@ class FixedOrder(object):
 
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            heat_pump_import_demand, hp_performance)['hp_elec']
+            heat_pump_import_demand, hp_performance)
 
         return {'h': heat_pump_import_demand, 'e': elec}
 
@@ -1189,14 +1138,14 @@ class FixedOrder(object):
             es_discharging, hp_performance, heat_unmet)
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
 
         # thermal output from heat pump running on renewables
-        HP_h_es = min(max_hp_ES['hp_demand'], heat_pump_spare)
+        HP_h_es = min(max_hp_ES.demand, heat_pump_spare)
         # elec usage
         HP_e_es = self.myHeatPump.elec_usage(
-            HP_h_es, hp_performance)['hp_elec']
+            HP_h_es, hp_performance)
 
         return {'h': HP_h_es, 'e': HP_e_es}
 
@@ -1212,11 +1161,11 @@ class FixedOrder(object):
 
         # CHARGE THERMAL STORAGE WITH HEAT PUMP DRIVEN BY SURPLUS
 
-        duty = hp_performance['duty']
+        duty = hp_performance.duty
         # capacity of heat pump leftover
         hp_cap_left = duty - hp_usage
         # max heat from heat pump running surplus
-        hp_max_RES = RES_left * hp_performance['cop']
+        hp_max_RES = RES_left * hp_performance.cop
         hp_left = min(hp_cap_left, hp_max_RES)
         # how much can be input into the hot water tank
         state = 'charging'
@@ -1229,7 +1178,7 @@ class FixedOrder(object):
         HPtrs = min(hp_left, tank_charge_left)
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            HPtrs, hp_performance)['hp_elec']
+            HPtrs, hp_performance)
 
         return {'h': HPtrs, 'e': elec}
 
@@ -1237,7 +1186,7 @@ class FixedOrder(object):
                        source_temp, flow_temp, timestep,
                        ts_discharge, ts_charge):
 
-        if self.myAux.fuel == 'Electric':
+        if self.myAux.fuel == Fuel.ELECTRIC:
 
             # how much can be input into the hot water tank
             state = 'charging'
@@ -1262,7 +1211,7 @@ class FixedOrder(object):
         # spare heat pump capacity
 
         heat_pump_spare = (
-            hp_performance['duty'] -
+            hp_performance.duty -
             hp_usage)
         # spare tank capacity
         state = 'charging'
@@ -1277,7 +1226,7 @@ class FixedOrder(object):
             ts_hp_charge_heat_imports = 0
         # elec usage
         elec = self.myHeatPump.elec_usage(
-            ts_hp_charge_heat_imports, hp_performance)['hp_elec']
+            ts_hp_charge_heat_imports, hp_performance)
 
         return {'h': ts_hp_charge_heat_imports, 'e': elec}
 
