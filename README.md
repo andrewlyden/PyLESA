@@ -16,10 +16,18 @@ This tool was developed as part of a PhD, "Modelling and Design of Local Energy 
 git clone git@github.com:andrewlyden/PyLESA.git
 ```
 
-3. Install the `PyLESA` python virtual environment:
+3. Install the `PyLESA` python virtual environment. If using Linux:
 ```
 python3.10 -m venv venv
 source venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If using Windows and Powershell:
+```
+python -m venv venv
+.\venv\Scripts\activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
