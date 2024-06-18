@@ -7,6 +7,8 @@ import pickle
 # import register_matplotlib_converters
 import matplotlib
 import matplotlib.pyplot as plt
+import time
+from tqdm import tqdm
 from typing import Dict
 
 from . import inputs
@@ -54,6 +56,7 @@ FIG_DPI = 200
 
 
 def run_plots(root: str | Path, subname: str):
+    then = time.time()
     root = Path(root).resolve()
     myInputs = inputs.Inputs(root, subname)
     # controller inputs
@@ -82,20 +85,26 @@ def run_plots(root: str | Path, subname: str):
         myPlots.grid()
         myPlots.RES_bar()
 
+    LOG.info(f"Written output files for: {subname}. Time taken: {int(round(time.time() - then,0))} seconds")
 
 def run_KPIs(root: str | Path):
     root = Path(root).resolve()
 
+    jobs = []
+
     my3DPlots = ThreeDPlots(root)
-    my3DPlots.KPIs_to_csv()
-    my3DPlots.plot_opex()
-    my3DPlots.plot_RES()
-    my3DPlots.plot_heat_from_RES()
-    my3DPlots.plot_HP_size_ratio()
-    my3DPlots.plot_HP_utilisation()
-    my3DPlots.plot_capital_cost()
-    my3DPlots.plot_LCOH()
-    my3DPlots.plot_COH()
+    jobs.append(my3DPlots.KPIs_to_csv)
+    jobs.append(my3DPlots.plot_opex)
+    jobs.append(my3DPlots.plot_RES)
+    jobs.append(my3DPlots.plot_heat_from_RES)
+    jobs.append(my3DPlots.plot_HP_size_ratio)
+    jobs.append(my3DPlots.plot_HP_utilisation)
+    jobs.append(my3DPlots.plot_capital_cost)
+    jobs.append(my3DPlots.plot_LCOH)
+    jobs.append(my3DPlots.plot_COH)
+
+    for job in tqdm(jobs, desc=f"Writing KPIs"):
+        job()
 
 
 class Plot(object):

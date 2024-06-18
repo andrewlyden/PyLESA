@@ -22,7 +22,7 @@ def read_inputs(xlsxpath: str | Path, root: Path) -> None:
         root: path to directory to store intermediary inputs and outputs
     """
     xlsxpath = valid_fpath(xlsxpath)
-    LOG.info(f'Reading MS Excel file: {xlsxpath.name}')
+    LOG.info(f'Reading MS Excel file: {xlsxpath}')
     root = Path(root).resolve()
     myInput = XlsxInput(xlsxpath, root)
 
