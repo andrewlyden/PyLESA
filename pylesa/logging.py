@@ -1,7 +1,8 @@
 import enum
 import logging
+from pathlib import Path
 
-from .constants import LOG_PATH, CONSOLE_LOG_FORMAT, FILE_LOG_FORMAT
+from .constants import LOG_FILENAME, CONSOLE_LOG_FORMAT, FILE_LOG_FORMAT
 
 
 class CustomFormatter(logging.Formatter):
@@ -26,21 +27,23 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def setup_logging(level: enum.Enum):
+def setup_logging(logdir: str | Path, level: enum.Enum):
     """Sets up logging handlers, removes any existing handlers
 
     A FileHandler and a StreamHandler (console) are created.
 
     Args:
+        logdir: path to directory to write log file
         level: Enum defining the logging level
     """
     root = logging.getLogger()
-    root.setLevel(level)
+    root.setLevel(min(logging.INFO, level))
     root.handlers.clear()
     handlers = []
 
     # Log to a file on disk
-    file_handler = logging.FileHandler(LOG_PATH, "w+")
+    # Level always set at least to INFO
+    file_handler = logging.FileHandler(Path(logdir).resolve() / LOG_FILENAME, "w+")
     file_handler.setFormatter(logging.Formatter(FILE_LOG_FORMAT))
     handlers.append(file_handler)
 
